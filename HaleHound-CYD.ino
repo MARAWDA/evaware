@@ -28,16 +28,12 @@
 #include "utils.h"
 #include "touch_buttons.h"
 #include "spi_manager.h"
-#include "subconfig.h"
-#include "nrf24_config.h"
 #include "icon.h"
 #include "skull_bg.h"
 
 // Attack modules
 #include "wifi_attacks.h"
 #include "bluetooth_attacks.h"
-#include "subghz_attacks.h"
-#include "nrf24_attacks.h"
 #include "gps_module.h"
 #include "serial_monitor.h"
 #include "firmware_update.h"
@@ -45,11 +41,8 @@
 #include "eapol_capture.h"
 #include "karma_attack.h"
 #include "saved_captures.h"
-#include "radio_test.h"
 #include "iot_recon.h"
 #include "loot_manager.h"
-#include "rfid_attacks.h"
-#include "jam_detect.h"
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL OBJECTS
@@ -80,14 +73,10 @@ unsigned long last_interaction_time = 0;
 // MENU DEFINITIONS - EXACT MATCH TO ORIGINAL ESP32-DIV
 // ═══════════════════════════════════════════════════════════════════════════
 
-const int NUM_MENU_ITEMS = 10;
+const int NUM_MENU_ITEMS = 6;
 const char *menu_items[NUM_MENU_ITEMS] = {
     "WiFi",
     "Bluetooth",
-    "2.4GHz",
-    "SubGHz",
-    "RFID",
-    "Jam Detect",
     "SIGINT",
     "Tools",
     "Setting",
@@ -97,10 +86,6 @@ const char *menu_items[NUM_MENU_ITEMS] = {
 const unsigned char *bitmap_icons[NUM_MENU_ITEMS] = {
     bitmap_icon_skull_wifi,
     bitmap_icon_skull_bluetooth,
-    bitmap_icon_skull_jammer,
-    bitmap_icon_skull_subghz,
-    bitmap_icon_skull_rfid,
-    bitmap_icon_skull_tools,
     bitmap_icon_skull_ir,
     bitmap_icon_skull_tools,
     bitmap_icon_skull_setting,
@@ -177,86 +162,6 @@ static const unsigned char * const airtag_submenu_icons_flash[] = {
     bitmap_icon_go_back
 };
 
-// NRF24 2.4GHz Submenu - 7 items
-const int nrf_NUM_SUBMENU_ITEMS = 7;
-const char *nrf_submenu_items[nrf_NUM_SUBMENU_ITEMS] = {
-    "Scanner",
-    "Spectrum Analyzer",
-    "NRF Sniffer",
-    "MouseJack",
-    "WLAN Jammer",
-    "Proto Kill",
-    "Back to Main Menu"
-};
-
-const unsigned char *nrf_submenu_icons[nrf_NUM_SUBMENU_ITEMS] = {
-    bitmap_icon_scanner,
-    bitmap_icon_analyzer,
-    bitmap_icon_eye,            // NRF Sniffer - eye icon
-    bitmap_icon_nuke,           // MouseJack - nuke icon
-    bitmap_icon_wifi_jammer,
-    bitmap_icon_skull_jammer,   // Proto Kill - skull jammer icon
-    bitmap_icon_go_back
-};
-
-// SubGHz Submenu - 5 items
-const int subghz_NUM_SUBMENU_ITEMS = 6;
-const char *subghz_submenu_items[subghz_NUM_SUBMENU_ITEMS] = {
-    "Replay Attack",
-    "Brute Force",
-    "SubGHz Jammer",
-    "Spectrum Analyzer",
-    "Saved Profile",
-    "Back to Main Menu"
-};
-
-const unsigned char *subghz_submenu_icons[subghz_NUM_SUBMENU_ITEMS] = {
-    bitmap_icon_antenna,
-    bitmap_icon_skull_subghz,
-    bitmap_icon_no_signal,
-    bitmap_icon_analyzer,
-    bitmap_icon_list,
-    bitmap_icon_go_back
-};
-
-// RFID Submenu - 6 items
-const int rfid_NUM_SUBMENU_ITEMS = 6;
-const char *rfid_submenu_items[rfid_NUM_SUBMENU_ITEMS] = {
-    "Card Scanner",
-    "Card Reader",
-    "Card Clone",
-    "Key Brute Force",
-    "Card Emulate",
-    "Back to Main Menu"
-};
-
-const unsigned char *rfid_submenu_icons[rfid_NUM_SUBMENU_ITEMS] = {
-    bitmap_icon_scanner,
-    bitmap_icon_list,
-    bitmap_icon_floppy,
-    bitmap_icon_key,
-    bitmap_icon_rfid,
-    bitmap_icon_go_back
-};
-
-// Jam Detect Submenu - 5 items
-const int jamdetect_NUM_SUBMENU_ITEMS = 5;
-const char *jamdetect_submenu_items[jamdetect_NUM_SUBMENU_ITEMS] = {
-    "WiFi Guardian",
-    "SubGHz Sentinel",
-    "2.4GHz Watchdog",
-    "Full Spectrum",
-    "Back to Main Menu"
-};
-
-const unsigned char *jamdetect_submenu_icons[jamdetect_NUM_SUBMENU_ITEMS] = {
-    bitmap_icon_skull_wifi,      // WiFi Guardian
-    bitmap_icon_skull_subghz,    // SubGHz Sentinel
-    bitmap_icon_skull_jammer,    // 2.4GHz Watchdog
-    bitmap_icon_analyzer,        // Full Spectrum
-    bitmap_icon_go_back
-};
-
 // SIGINT Submenu - 7 items
 const int sigint_NUM_SUBMENU_ITEMS = 7;
 const char *sigint_submenu_items[sigint_NUM_SUBMENU_ITEMS] = {
@@ -279,14 +184,13 @@ const unsigned char *sigint_submenu_icons[sigint_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_go_back
 };
 
-// Tools Submenu - 6 items
-const int tools_NUM_SUBMENU_ITEMS = 6;
+// Tools Submenu - 5 items
+const int tools_NUM_SUBMENU_ITEMS = 5;
 const char *tools_submenu_items[tools_NUM_SUBMENU_ITEMS] = {
     "Serial Monitor",
     "Update Firmware",
     "Touch Calibrate",
     "GPS",
-    "Radio Test",
     "Back to Main Menu"
 };
 
@@ -295,18 +199,18 @@ const unsigned char *tools_submenu_icons[tools_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_follow,
     bitmap_icon_stat,
     bitmap_icon_antenna,
-    bitmap_icon_signal,
     bitmap_icon_go_back
 };
 
-// Settings Submenu - 10 items
-const int settings_NUM_SUBMENU_ITEMS = 10;
+// Settings Submenu - 11 items
+const int settings_NUM_SUBMENU_ITEMS = 11;
 const char *settings_submenu_items[settings_NUM_SUBMENU_ITEMS] = {
     "Brightness",
     "Screen Timeout",
     "Swap Colors",
     "Invert Display",
     "Color Mode",
+    "Theme",
     "Rotation",
     "Device Info",
     "Set PIN",
@@ -317,6 +221,7 @@ const char *settings_submenu_items[settings_NUM_SUBMENU_ITEMS] = {
 const unsigned char *settings_submenu_icons[settings_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_led,
     bitmap_icon_eye2,
+    bitmap_icon_led,
     bitmap_icon_led,
     bitmap_icon_led,
     bitmap_icon_led,
@@ -376,7 +281,7 @@ const int COLUMN_WIDTH = SCREEN_WIDTH / 2;
 const int X_OFFSET_LEFT = 10;
 const int X_OFFSET_RIGHT = X_OFFSET_LEFT + COLUMN_WIDTH;
 const int Y_START = 30;
-const int Y_SPACING = (SCREEN_HEIGHT - CONTENT_Y_START - BUTTON_BAR_H) / 5;
+const int Y_SPACING = (SCREEN_HEIGHT - CONTENT_Y_START - BUTTON_BAR_H) / 3;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ICON BAR HELPER - MATCHES ORIGINAL HALEHOUND
@@ -421,42 +326,22 @@ void updateActiveSubmenu() {
             active_submenu_size = bluetooth_NUM_SUBMENU_ITEMS;
             active_submenu_icons = bluetooth_submenu_icons;
             break;
-        case 2: // 2.4GHz (NRF)
-            active_submenu_items = nrf_submenu_items;
-            active_submenu_size = nrf_NUM_SUBMENU_ITEMS;
-            active_submenu_icons = nrf_submenu_icons;
-            break;
-        case 3: // SubGHz
-            active_submenu_items = subghz_submenu_items;
-            active_submenu_size = subghz_NUM_SUBMENU_ITEMS;
-            active_submenu_icons = subghz_submenu_icons;
-            break;
-        case 4: // RFID
-            active_submenu_items = rfid_submenu_items;
-            active_submenu_size = rfid_NUM_SUBMENU_ITEMS;
-            active_submenu_icons = rfid_submenu_icons;
-            break;
-        case 5: // Jam Detect
-            active_submenu_items = jamdetect_submenu_items;
-            active_submenu_size = jamdetect_NUM_SUBMENU_ITEMS;
-            active_submenu_icons = jamdetect_submenu_icons;
-            break;
-        case 6: // SIGINT
+        case 2: // SIGINT
             active_submenu_items = sigint_submenu_items;
             active_submenu_size = sigint_NUM_SUBMENU_ITEMS;
             active_submenu_icons = sigint_submenu_icons;
             break;
-        case 7: // Tools
+        case 3: // Tools
             active_submenu_items = tools_submenu_items;
             active_submenu_size = tools_NUM_SUBMENU_ITEMS;
             active_submenu_icons = tools_submenu_icons;
             break;
-        case 8: // Settings
+        case 4: // Settings
             active_submenu_items = settings_submenu_items;
             active_submenu_size = settings_NUM_SUBMENU_ITEMS;
             active_submenu_icons = settings_submenu_icons;
             break;
-        case 9: // About
+        case 5: // About
             active_submenu_items = about_submenu_items;
             active_submenu_size = about_NUM_SUBMENU_ITEMS;
             active_submenu_icons = about_submenu_icons;
@@ -551,10 +436,10 @@ void displayMenu() {
         // Flaming skulls watermark - pushed down behind menu
         tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);  // Dark cyan watermark
 
-        // Draw menu buttons — left column (0-4): 5 items, right column (5-9): 5 items
+        // Draw menu buttons — left column (0-2): 3 items, right column (3-5): 3 items
         for (int i = 0; i < NUM_MENU_ITEMS; i++) {
-            int column = (i < 5) ? 0 : 1;
-            int row = (i < 5) ? i : (i - 5);
+            int column = (i < 3) ? 0 : 1;
+            int row = (i < 3) ? i : (i - 3);
             int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
             int y_position = Y_START + row * Y_SPACING;
 
@@ -575,8 +460,8 @@ void displayMenu() {
     // Highlight current selection
     if (last_menu_index != current_menu_index) {
         for (int i = 0; i < NUM_MENU_ITEMS; i++) {
-            int column = (i < 5) ? 0 : 1;
-            int row = (i < 5) ? i : (i - 5);
+            int column = (i < 3) ? 0 : 1;
+            int row = (i < 3) ? i : (i - 3);
             int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
             int y_position = Y_START + row * Y_SPACING;
 
@@ -594,8 +479,8 @@ void displayMenu() {
         }
 
         // Highlight current
-        int column = (current_menu_index < 5) ? 0 : 1;
-        int row = (current_menu_index < 5) ? current_menu_index : (current_menu_index - 5);
+        int column = (current_menu_index < 3) ? 0 : 1;
+        int row = (current_menu_index < 3) ? current_menu_index : (current_menu_index - 3);
         int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
         int y_position = Y_START + row * Y_SPACING;
 
@@ -1163,227 +1048,6 @@ void handleAirTagHubTouch() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// NRF24 2.4GHz SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
-
-void handleNRFSubmenuTouch() {
-    touchButtonsUpdate();
-
-    if (isBackButtonTapped()) {
-        returnToMainMenu();
-        return;
-    }
-
-    for (int i = 0; i < active_submenu_size; i++) {
-        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
-        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
-
-        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
-            current_submenu_index = i;
-            last_interaction_time = millis();
-            displaySubmenu();
-            delay(200);
-
-            if (current_submenu_index == 6) { // Back
-                returnToMainMenu();
-                return;
-            }
-
-            feature_active = true;
-            feature_exit_requested = false;
-            waitForTouchRelease();
-
-            switch (current_submenu_index) {
-                case 0: // Scanner
-                    Scanner::scannerSetup();
-                    while (!feature_exit_requested) {
-                        Scanner::scannerLoop();
-                        if (Scanner::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    Scanner::cleanup();
-                    break;
-                case 1: // Spectrum Analyzer
-                    Analyzer::analyzerSetup();
-                    while (!feature_exit_requested) {
-                        Analyzer::analyzerLoop();
-                        if (Analyzer::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    Analyzer::cleanup();
-                    break;
-                case 2: // NRF Sniffer
-                    NrfSniffer::setup();
-                    while (!feature_exit_requested) {
-                        NrfSniffer::loop();
-                        if (NrfSniffer::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    NrfSniffer::cleanup();
-                    break;
-                case 3: // MouseJack
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    MouseJack::setup();
-                    while (!feature_exit_requested) {
-                        MouseJack::loop();
-                        if (MouseJack::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    MouseJack::cleanup();
-                    break;
-                case 4: // WLAN Jammer
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    WLANJammer::wlanjammerSetup();
-                    while (!feature_exit_requested) {
-                        WLANJammer::wlanjammerLoop();
-                        if (WLANJammer::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    WLANJammer::cleanup();
-                    break;
-                case 5: // Proto Kill
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    ProtoKill::prokillSetup();
-                    while (!feature_exit_requested) {
-                        ProtoKill::prokillLoop();
-                        if (ProtoKill::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    ProtoKill::cleanup();
-                    break;
-            }
-
-            returnToSubmenu();
-            break;
-        }
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SUBGHZ SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
-
-void handleSubGHzSubmenuTouch() {
-    touchButtonsUpdate();
-
-    if (isBackButtonTapped()) {
-        returnToMainMenu();
-        return;
-    }
-
-    for (int i = 0; i < active_submenu_size; i++) {
-        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
-        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
-
-        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
-            current_submenu_index = i;
-            last_interaction_time = millis();
-            displaySubmenu();
-            delay(200);
-
-            if (current_submenu_index == 5) { // Back
-                returnToMainMenu();
-                return;
-            }
-
-            feature_active = true;
-            feature_exit_requested = false;
-            waitForTouchRelease();
-
-            switch (current_submenu_index) {
-                case 0: // Replay Attack
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    ReplayAttack::setup();
-                    while (!feature_exit_requested) {
-                        ReplayAttack::loop();
-                        if (ReplayAttack::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    ReplayAttack::cleanup();
-                    break;
-                case 1: // Brute Force
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    SubBrute::setup();
-                    while (!feature_exit_requested) {
-                        SubBrute::loop();
-                        if (SubBrute::isExitRequested()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;  // BOOT button direct
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    SubBrute::cleanup();
-                    break;
-                case 2: // SubGHz Jammer
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    SubJammer::setup();
-                    while (!feature_exit_requested) {
-                        SubJammer::loop();
-                        if (SubJammer::isExitRequested()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;  // BOOT button direct
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    SubJammer::cleanup();
-                    break;
-                case 3: // Spectrum Analyzer
-                    SubAnalyzer::setup();
-                    while (!feature_exit_requested) {
-                        SubAnalyzer::loop();
-                        if (SubAnalyzer::isExitRequested()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;  // BOOT button direct
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    SubAnalyzer::cleanup();
-                    break;
-                case 4: // Saved Profile
-                    SavedProfile::saveSetup();
-                    while (!feature_exit_requested) {
-                        SavedProfile::saveLoop();
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                    }
-                    break;
-            }
-
-            returnToSubmenu();
-            break;
-        }
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // SIGINT SUBMENU HANDLER
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1399,205 +1063,6 @@ void showSigintPlaceholder(const char* title) {
         touchButtonsUpdate();
         if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) break;
         delay(50);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// RFID SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
-
-void handleRFIDSubmenuTouch() {
-    touchButtonsUpdate();
-
-    if (isBackButtonTapped()) {
-        returnToMainMenu();
-        return;
-    }
-
-    for (int i = 0; i < active_submenu_size; i++) {
-        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
-        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
-
-        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
-            current_submenu_index = i;
-            last_interaction_time = millis();
-            displaySubmenu();
-            delay(200);
-
-            if (current_submenu_index == 5) { // Back
-                returnToMainMenu();
-                return;
-            }
-
-            feature_active = true;
-            feature_exit_requested = false;
-            waitForTouchRelease();
-
-            switch (current_submenu_index) {
-                case 0: // Card Scanner
-                    RFIDScanner::setup();
-                    while (!feature_exit_requested) {
-                        RFIDScanner::loop();
-                        if (RFIDScanner::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (isInoBackTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    RFIDScanner::cleanup();
-                    break;
-                case 1: // Card Reader
-                    RFIDReader::setup();
-                    while (!feature_exit_requested) {
-                        RFIDReader::loop();
-                        if (RFIDReader::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (isInoBackTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    RFIDReader::cleanup();
-                    break;
-                case 2: // Card Clone
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    RFIDClone::setup();
-                    while (!feature_exit_requested) {
-                        RFIDClone::loop();
-                        if (RFIDClone::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (isInoBackTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    RFIDClone::cleanup();
-                    break;
-                case 3: // Key Brute Force
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    RFIDBrute::setup();
-                    while (!feature_exit_requested) {
-                        RFIDBrute::loop();
-                        if (RFIDBrute::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (isInoBackTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    RFIDBrute::cleanup();
-                    break;
-                case 4: // Card Emulate
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    RFIDEmulate::setup();
-                    while (!feature_exit_requested) {
-                        RFIDEmulate::loop();
-                        if (RFIDEmulate::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (isInoBackTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    RFIDEmulate::cleanup();
-                    break;
-            }
-
-            returnToSubmenu();
-            break;
-        }
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// JAM DETECT SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
-
-void handleJamDetectSubmenuTouch() {
-    touchButtonsUpdate();
-
-    if (isBackButtonTapped()) {
-        returnToMainMenu();
-        return;
-    }
-
-    for (int i = 0; i < active_submenu_size; i++) {
-        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
-        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
-
-        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
-            current_submenu_index = i;
-            last_interaction_time = millis();
-            displaySubmenu();
-            delay(200);
-
-            if (current_submenu_index == 4) { // Back
-                returnToMainMenu();
-                return;
-            }
-
-            feature_active = true;
-            feature_exit_requested = false;
-            waitForTouchRelease();
-
-            switch (current_submenu_index) {
-                case 0: // WiFi Guardian
-                    WiFiGuardian::setup();
-                    while (!feature_exit_requested) {
-                        WiFiGuardian::loop();
-                        if (WiFiGuardian::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    WiFiGuardian::cleanup();
-                    break;
-                case 1: // SubGHz Sentinel
-                    SubSentinel::setup();
-                    while (!feature_exit_requested) {
-                        SubSentinel::loop();
-                        if (SubSentinel::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    SubSentinel::cleanup();
-                    break;
-                case 2: // 2.4GHz Watchdog
-                    GHzWatchdog::setup();
-                    while (!feature_exit_requested) {
-                        GHzWatchdog::loop();
-                        if (GHzWatchdog::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    GHzWatchdog::cleanup();
-                    break;
-                case 3: // Full Spectrum
-                    FullSpectrum::setup();
-                    while (!feature_exit_requested) {
-                        FullSpectrum::loop();
-                        if (FullSpectrum::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    FullSpectrum::cleanup();
-                    break;
-            }
-
-            returnToSubmenu();
-            break;
-        }
     }
 }
 
@@ -1728,7 +1193,7 @@ void handleToolsSubmenuTouch() {
             delay(200);
             waitForTouchRelease();
 
-            if (current_submenu_index == 5) { // Back
+            if (current_submenu_index == 4) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -1743,13 +1208,6 @@ void handleToolsSubmenuTouch() {
             // GPS - launch GPS screen
             if (current_submenu_index == 3) {
                 gpsScreen();
-                returnToSubmenu();
-                break;
-            }
-
-            // Radio Test - SPI radio hardware verification
-            if (current_submenu_index == 4) {
-                radioTestScreen();
                 returnToSubmenu();
                 break;
             }
@@ -2149,6 +1607,78 @@ void colorModeLoop() {
             applyColorMode(color_mode);
             saveSettings();
             colorModeScreen();
+            delay(300);
+        }
+
+        delay(50);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THEME (Classic vs EVA-02)
+// ═══════════════════════════════════════════════════════════════════════════
+
+void themeScreen() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(60, "THEME");
+
+    tft.drawRoundRect(20, 95, 200, 50, 6, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+    const char* themeName = theme_eva02 ? "EVA-02" : "CLASSIC";
+    int nameLen = strlen(themeName);
+    int nameX = (CYD_SCREEN_WIDTH - nameLen * 12) / 2;
+    tft.setCursor(nameX, 108);
+    tft.print(themeName);
+
+    // Preview swatches for the active theme
+    int swatchW = 30;
+    int swatchH = 20;
+    int swatchY = 155;
+    int swatchStartX = 10;
+    uint16_t swatches[] = {HALEHOUND_MAGENTA, HALEHOUND_HOTPINK, HALEHOUND_BRIGHT,
+                           HALEHOUND_VIOLET, HALEHOUND_DARK, HALEHOUND_BLACK};
+    for (int i = 0; i < 6; i++) {
+        int sx = swatchStartX + i * (swatchW + 7);
+        tft.fillRect(sx, swatchY, swatchW, swatchH, swatches[i]);
+        tft.drawRect(sx, swatchY, swatchW, swatchH, HALEHOUND_GUNMETAL);
+    }
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(20, 185);
+    tft.print("Tap NEXT to switch theme.");
+    tft.setCursor(20, 197);
+    tft.print("Only visible in Color Mode: Default.");
+
+    tft.fillRect(50, 225, 140, 45, HALEHOUND_DARK);
+    tft.drawRect(50, 225, 140, 45, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(80, 238);
+    tft.print("NEXT");
+}
+
+void themeLoop() {
+    themeScreen();
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+        // NEXT button — toggle Classic / EVA-02
+        if (isTouchInArea(50, 225, 140, 45)) {
+            applyTheme(!theme_eva02);
+            saveSettings();
+            themeScreen();
             delay(300);
         }
 
@@ -2697,7 +2227,7 @@ void handleSettingsSubmenuTouch() {
             displaySubmenu();
             delay(200);
 
-            if (current_submenu_index == 9) { // Back
+            if (current_submenu_index == 10) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -2722,16 +2252,19 @@ void handleSettingsSubmenuTouch() {
                 case 4: // Color Mode
                     colorModeLoop();
                     break;
-                case 5: // Rotation
+                case 5: // Theme
+                    themeLoop();
+                    break;
+                case 6: // Rotation
                     rotationControlLoop();
                     break;
-                case 6: // Device Info
+                case 7: // Device Info
                     displayDeviceInfo();
                     break;
-                case 7: // Set PIN
+                case 8: // Set PIN
                     pinSetupLoop();
                     break;
-                case 8: // CC1101 Module Type
+                case 9: // CC1101 Module Type
                     cc1101ModuleLoop();
                     break;
             }
@@ -3816,14 +3349,10 @@ void handleButtons() {
         switch (current_menu_index) {
             case 0: handleWiFiSubmenuTouch(); break;
             case 1: handleBluetoothSubmenuTouch(); break;
-            case 2: handleNRFSubmenuTouch(); break;
-            case 3: handleSubGHzSubmenuTouch(); break;
-            case 4: handleRFIDSubmenuTouch(); break;
-            case 5: handleJamDetectSubmenuTouch(); break;
-            case 6: handleSIGINTSubmenuTouch(); break;
-            case 7: handleToolsSubmenuTouch(); break;
-            case 8: handleSettingsSubmenuTouch(); break;
-            case 9: handleAboutPage(); break;
+            case 2: handleSIGINTSubmenuTouch(); break;
+            case 3: handleToolsSubmenuTouch(); break;
+            case 4: handleSettingsSubmenuTouch(); break;
+            case 5: handleAboutPage(); break;
             default: break;
         }
     } else {
@@ -3860,8 +3389,8 @@ void handleButtons() {
 
         // Check touch on menu items
         for (int i = 0; i < NUM_MENU_ITEMS; i++) {
-            int column = (i < 5) ? 0 : 1;
-            int row = (i < 5) ? i : (i - 5);
+            int column = (i < 3) ? 0 : 1;
+            int row = (i < 3) ? i : (i - 3);
             int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
             int y_position = Y_START + row * Y_SPACING;
 

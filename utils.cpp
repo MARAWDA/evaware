@@ -11,16 +11,20 @@
 #include <SPI.h>
 
 // ═══════════════════════════════════════════════════════════════════════════
-// THEME COLOR DEFINITIONS — default palette (Jesse's pink/purple theme)
+// THEME COLOR DEFINITIONS — EVA-02 palette (dark red / orange-red)
 // These are the actual storage for the extern declarations in shared.h
 // ═══════════════════════════════════════════════════════════════════════════
 
-uint16_t HALEHOUND_MAGENTA = 0x041F;  // Electric Blue - Primary (selected items)
-uint16_t HALEHOUND_HOTPINK = 0xF81F;  // Hot Pink - Accents
-uint16_t HALEHOUND_BRIGHT  = 0xF81F;  // Hot Pink - Highlights
-uint16_t HALEHOUND_VIOLET  = 0x780F;  // Purple - Accent color
-uint16_t HALEHOUND_CYAN    = 0xF81F;  // Hot Pink for text (was cyan/blue)
-uint16_t HALEHOUND_GREEN   = 0x780F;  // Purple (was neon green)
+uint16_t HALEHOUND_MAGENTA = 0xFC60;  // #FF8C00 Bright Orange - Primary (selected items)
+uint16_t HALEHOUND_HOTPINK = 0xF9E0;  // #FF3B00 Orange-Red - Accents
+uint16_t HALEHOUND_BRIGHT  = 0xFD20;  // #FFA500 Orange - Highlights
+uint16_t HALEHOUND_VIOLET  = 0xFA20;  // #FF4500 Orange-Red - Accent color
+uint16_t HALEHOUND_CYAN    = 0xFFFF;  // White - Text
+uint16_t HALEHOUND_GREEN   = 0xFA20;  // #FF4500 Orange-Red - Secondary accent
+uint16_t HALEHOUND_DARK     = 0x3800; // #3A0000 Dark red tile/icon-bar background
+uint16_t HALEHOUND_BLACK    = 0x4800; // #4A0000 Dark red screen background
+uint16_t HALEHOUND_GUNMETAL = 0x2945; // #2A2A2A Dark gray (secondary/disabled)
+bool theme_eva02 = true;  // Settings > Theme: true = EVA-02, false = Classic
 
 // ═══════════════════════════════════════════════════════════════════════════
 // BUTTON INPUT FUNCTIONS
@@ -333,7 +337,7 @@ String getElapsedTimeString(uint32_t startMillis) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #define EEPROM_SIZE 512
-#define EEPROM_MAGIC 0xCD09   // Bumped from 0xCD08 — added VALHALLA protocol + disclaimer
+#define EEPROM_MAGIC 0xCD0A   // Bumped from 0xCD09 — added theme_eva02 (Classic/EVA-02 toggle)
 
 // Globals defined in HaleHound-CYD.ino
 extern int brightness_level;
@@ -368,6 +372,7 @@ struct Settings {
     uint8_t disclaimerAccepted; // 0 = not accepted, 1 = accepted (VALHALLA protocol)
     uint8_t blueTeamMode;      // 0 = normal, 1 = blue team (defensive only)
     uint8_t cc1101PaModule;    // 0 = standard HW-863, 1 = E07-433M20S PA module
+    uint8_t themeEva02;        // 0 = Classic (pink/purple), 1 = EVA-02 (red/orange)
 };
 
 static Settings settings;
@@ -399,6 +404,7 @@ void saveSettings() {
     settings.disclaimerAccepted = disclaimer_accepted ? 1 : 0;
     settings.blueTeamMode = blue_team_mode ? 1 : 0;
     settings.cc1101PaModule = cc1101_pa_module ? 1 : 0;
+    settings.themeEva02 = theme_eva02 ? 1 : 0;
 
     EEPROM.begin(EEPROM_SIZE);
     EEPROM.put(0, settings);
@@ -438,6 +444,7 @@ void loadSettings() {
         settings.disclaimerAccepted = 0; // Disclaimer not accepted — forces first-time screen
         settings.blueTeamMode = 0;     // Normal mode (not blue team)
         settings.cc1101PaModule = 0;   // Standard CC1101 (no PA control)
+        settings.themeEva02 = 1;       // EVA-02 theme by default
 
         // Apply defaults to globals so they're not left uninitialized
         brightness_level = settings.brightness;
@@ -447,6 +454,7 @@ void loadSettings() {
         disclaimer_accepted = false;
         blue_team_mode = false;
         cc1101_pa_module = false;
+        theme_eva02 = true;
 
         // Write defaults to EEPROM immediately — prevents re-triggering on every boot
         EEPROM.begin(EEPROM_SIZE);
@@ -469,6 +477,7 @@ void loadSettings() {
         disclaimer_accepted = (settings.disclaimerAccepted == 1);
         blue_team_mode = (settings.blueTeamMode == 1);
         cc1101_pa_module = (settings.cc1101PaModule == 1);
+        theme_eva02 = (settings.themeEva02 == 1);
 
         // Apply rotation to global
         extern uint8_t screen_rotation;
@@ -544,6 +553,9 @@ void applyColorMode(uint8_t mode) {
             HALEHOUND_VIOLET  = 0x067F;  // Bright Blue — accent
             HALEHOUND_CYAN    = 0xFFE0;  // Yellow — text
             HALEHOUND_GREEN   = 0x067F;  // Bright Blue — secondary
+            HALEHOUND_DARK     = 0x2841; // Neutral background — accessibility overrides cosmetic theme
+            HALEHOUND_BLACK    = 0x0000;
+            HALEHOUND_GUNMETAL = 0x18E3;
             break;
         case 2: // High Contrast — white + cyan (maximum visibility)
             HALEHOUND_MAGENTA = 0x07FF;  // Bright Cyan — primary selection
@@ -552,20 +564,43 @@ void applyColorMode(uint8_t mode) {
             HALEHOUND_VIOLET  = 0x07FF;  // Bright Cyan — accent
             HALEHOUND_CYAN    = 0xFFFF;  // White — text
             HALEHOUND_GREEN   = 0x07E0;  // True Green — secondary
+            HALEHOUND_DARK     = 0x2841; // Neutral background — accessibility overrides cosmetic theme
+            HALEHOUND_BLACK    = 0x0000;
+            HALEHOUND_GUNMETAL = 0x18E3;
             break;
-        default: // Mode 0 — Default (Jesse's pink/purple theme)
-            HALEHOUND_MAGENTA = 0x041F;  // Electric Blue
-            HALEHOUND_HOTPINK = 0xF81F;  // Hot Pink
-            HALEHOUND_BRIGHT  = 0xF81F;  // Hot Pink
-            HALEHOUND_VIOLET  = 0x780F;  // Purple
-            HALEHOUND_CYAN    = 0xF81F;  // Hot Pink
-            HALEHOUND_GREEN   = 0x780F;  // Purple
+        default: // Mode 0 — Default (cosmetic theme: Classic or EVA-02, see theme_eva02)
+            if (theme_eva02) {
+                HALEHOUND_MAGENTA = 0xFC60;  // Bright Orange
+                HALEHOUND_HOTPINK = 0xF9E0;  // Orange-Red
+                HALEHOUND_BRIGHT  = 0xFD20;  // Orange
+                HALEHOUND_VIOLET  = 0xFA20;  // Orange-Red
+                HALEHOUND_CYAN    = 0xFFFF;  // White
+                HALEHOUND_GREEN   = 0xFA20;  // Orange-Red
+                HALEHOUND_DARK     = 0x3800; // #3A0000 Dark red tile background
+                HALEHOUND_BLACK    = 0x4800; // #4A0000 Dark red screen background
+                HALEHOUND_GUNMETAL = 0x2945; // #2A2A2A Dark gray
+            } else {
+                HALEHOUND_MAGENTA = 0x041F;  // Electric Blue
+                HALEHOUND_HOTPINK = 0xF81F;  // Hot Pink
+                HALEHOUND_BRIGHT  = 0xF81F;  // Hot Pink
+                HALEHOUND_VIOLET  = 0x780F;  // Purple
+                HALEHOUND_CYAN    = 0xF81F;  // Hot Pink
+                HALEHOUND_GREEN   = 0x780F;  // Purple
+                HALEHOUND_DARK     = 0x2841; // Original dark background
+                HALEHOUND_BLACK    = 0x0000; // Pure black
+                HALEHOUND_GUNMETAL = 0x18E3; // Original gunmetal gray
+            }
             break;
     }
 
     #if CYD_DEBUG
     Serial.printf("[UTILS] Color mode applied: %d\n", mode);
     #endif
+}
+
+void applyTheme(bool eva02) {
+    theme_eva02 = eva02;
+    applyColorMode(color_mode);  // Re-derive palette; only visible when color_mode == 0 (Default)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

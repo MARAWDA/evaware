@@ -9,7 +9,7 @@
 #include "touch_buttons.h"
 #include "utils.h"
 #include "icon.h"
-#include "nrf24_config.h"
+#include <RF24.h>
 #include <BLEDevice.h>
 #include <BLEAdvertising.h>
 #include <SPI.h>
@@ -23,6 +23,44 @@
 #include <SD.h>
 #include "spi_manager.h"
 #include "wp_loot_viewer.h"
+#include <ELECHOUSE_CC1101_SRC_DRV.h>
+
+// ── NRF24 hardware (BLE Jammer only — nrf24_config.cpp/subghz-attack code removed) ──
+// BLE Jammer needs the physical NRF24L01+ radio to emit a 2.4GHz carrier; this is
+// the only feature still using this chip, so its setup lives here instead of a
+// separate "radio" module.
+RF24 nrf24Radio(NRF24_CE, NRF24_CSN, 4000000);  // 4MHz SPI — ESP32+PA/LNA needs ≤4MHz (RF24 #992)
+static bool nrf24SpiClaimed = false;
+
+static void nrf24ClaimSPI() {
+    if (nrf24SpiClaimed) return;
+
+    #ifndef NMRF_HAT
+    // Standard CYD: CC1101 CS (GPIO 27) is separate — safe to send setSidle
+    // Hat: CC1101_CS == NRF24_CSN == GPIO 27 — setSidle would corrupt NRF24
+    ELECHOUSE_cc1101.setSidle();
+    #endif
+
+    #if defined(CC1101_TX_EN) && defined(CC1101_RX_EN)
+    if (cc1101_pa_module) {
+        digitalWrite(CC1101_TX_EN, LOW);
+        digitalWrite(CC1101_RX_EN, LOW);
+    }
+    #endif
+
+    SPI.end();
+    SPI.begin(RADIO_SPI_SCK, RADIO_SPI_MISO, RADIO_SPI_MOSI, NRF24_CSN);
+    nrf24SpiClaimed = true;
+}
+
+static void nrf24ReleaseSPI() {
+    if (!nrf24SpiClaimed) return;
+
+    nrf24Radio.powerDown();
+    SPI.end();
+    SPI.begin(RADIO_SPI_SCK, RADIO_SPI_MISO, RADIO_SPI_MOSI, CC1101_CS);
+    nrf24SpiClaimed = false;
+}
 
 // ── Classic BT memory release ───────────────────────────────────────────
 // ESP32 Bluedroid reserves ~28KB for Classic BT by default.

@@ -125,6 +125,9 @@ void applyColorOrder();
 // Apply color mode palette (0=Default, 1=Colorblind, 2=High Contrast)
 void applyColorMode(uint8_t mode);
 
+// Apply cosmetic theme (true=EVA-02 red/orange, false=Classic pink/purple)
+void applyTheme(bool eva02);
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DEBUG HELPERS
 // ═══════════════════════════════════════════════════════════════════════════

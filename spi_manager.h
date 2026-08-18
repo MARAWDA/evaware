@@ -14,9 +14,8 @@
 // │ Device   │ CS Pin  │ Usage                                               │
 // ├──────────┼─────────┼─────────────────────────────────────────────────────┤
 // │ SD Card  │ GPIO 5  │ DuckyScript payloads, logs, wardriving data        │
-// │ CC1101   │ GPIO 27 │ SubGHz TX/RX (300-928 MHz)                          │
-// │ NRF24    │ GPIO 4  │ 2.4GHz MouseJacker, BLE spam, channel scanner       │
-// │ PN532    │ GPIO 17 │ NFC/RFID 13.56 MHz (LSBFIRST SPI!)                 │
+// │ CC1101   │ GPIO 27 │ Kept for hardware, no attack features use it        │
+// │ NRF24    │ GPIO 4  │ BLE Jammer only (2.4GHz carrier)                    │
 // └──────────┴─────────┴─────────────────────────────────────────────────────┘
 //
 // RULES:
@@ -39,8 +38,7 @@ enum SPIDevice {
     SPI_DEVICE_NONE,      // No device selected (all CS HIGH)
     SPI_DEVICE_SD,        // SD Card (GPIO 5)
     SPI_DEVICE_CC1101,    // CC1101 SubGHz (GPIO 27)
-    SPI_DEVICE_NRF24,     // NRF24L01 2.4GHz (GPIO 4)
-    SPI_DEVICE_PN532      // PN532 NFC/RFID 13.56MHz (GPIO 17) — LSBFIRST!
+    SPI_DEVICE_NRF24      // NRF24L01 2.4GHz (GPIO 4)
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -86,10 +84,6 @@ bool spiSelectCC1101();
 // Returns true if NRF24 is enabled and selected
 bool spiSelectNRF24();
 
-// Select PN532 for NFC/RFID operations
-// Returns true if PN532 is enabled and selected
-bool spiSelectPN532();
-
 // ═══════════════════════════════════════════════════════════════════════════
 // BUS LOCKING (for multi-step operations)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -116,7 +110,6 @@ SPISettings spiGetSettings(SPIDevice device);
 #define SPI_SPEED_SD        4000000   // 4 MHz for SD card
 #define SPI_SPEED_CC1101    4000000   // 4 MHz for CC1101
 #define SPI_SPEED_NRF24     8000000   // 8 MHz for NRF24 (can handle 10MHz)
-#define SPI_SPEED_PN532     2000000   // 2 MHz for PN532 (datasheet max 5MHz, conservative)
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DEBUG

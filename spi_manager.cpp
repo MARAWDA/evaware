@@ -31,10 +31,6 @@ static void deselectAllCS() {
     #if CYD_HAS_NRF24
     digitalWrite(NRF24_CSN, HIGH);
     #endif
-
-    #if CYD_HAS_PN532
-    digitalWrite(PN532_CS, HIGH);
-    #endif
 }
 
 // Select a specific CS pin (pull LOW)
@@ -55,12 +51,6 @@ static void selectCS(SPIDevice device) {
         case SPI_DEVICE_NRF24:
             #if CYD_HAS_NRF24
             digitalWrite(NRF24_CSN, LOW);
-            #endif
-            break;
-
-        case SPI_DEVICE_PN532:
-            #if CYD_HAS_PN532
-            digitalWrite(PN532_CS, LOW);
             #endif
             break;
 
@@ -106,14 +96,6 @@ void spiManagerSetup() {
     digitalWrite(NRF24_CSN, HIGH);
     #if CYD_DEBUG
     Serial.printf("[SPI]   NRF24 CSN (GPIO %d) configured\n", NRF24_CSN);
-    #endif
-    #endif
-
-    #if CYD_HAS_PN532
-    pinMode(PN532_CS, OUTPUT);
-    digitalWrite(PN532_CS, HIGH);
-    #if CYD_DEBUG
-    Serial.println("[SPI]   PN532 CS (GPIO 17) configured");
     #endif
     #endif
 
@@ -172,15 +154,6 @@ bool spiSelect(SPIDevice device) {
             #endif
             break;
 
-        case SPI_DEVICE_PN532:
-            #if !CYD_HAS_PN532
-            #if CYD_DEBUG
-            Serial.println("[SPI] ERROR: PN532 not enabled in config");
-            #endif
-            return false;
-            #endif
-            break;
-
         case SPI_DEVICE_NONE:
             // Always allowed
             break;
@@ -198,7 +171,7 @@ bool spiSelect(SPIDevice device) {
 
     #if CYD_DEBUG
     if (device != SPI_DEVICE_NONE) {
-        const char* names[] = {"NONE", "SD", "CC1101", "NRF24", "PN532"};
+        const char* names[] = {"NONE", "SD", "CC1101", "NRF24"};
         Serial.print("[SPI] Selected: ");
         Serial.println(names[device]);
     }
@@ -254,14 +227,6 @@ bool spiSelectNRF24() {
     #endif
 }
 
-bool spiSelectPN532() {
-    #if CYD_HAS_PN532
-    return spiSelect(SPI_DEVICE_PN532);
-    #else
-    return false;
-    #endif
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // BUS LOCKING
 // ═══════════════════════════════════════════════════════════════════════════
@@ -302,10 +267,6 @@ SPISettings spiGetSettings(SPIDevice device) {
             // NRF24: 8 MHz, Mode 0, MSB first
             return SPISettings(SPI_SPEED_NRF24, MSBFIRST, SPI_MODE0);
 
-        case SPI_DEVICE_PN532:
-            // PN532: 2 MHz, Mode 0, LSB first (!) — only VSPI device using LSBFIRST
-            return SPISettings(SPI_SPEED_PN532, LSBFIRST, SPI_MODE0);
-
         default:
             // Default safe settings
             return SPISettings(1000000, MSBFIRST, SPI_MODE0);
@@ -328,7 +289,7 @@ void spiPrintStatus() {
     Serial.print("Bus Locked:  ");
     Serial.println(busLocked ? "YES" : "NO");
 
-    const char* deviceNames[] = {"NONE", "SD Card", "CC1101", "NRF24", "PN532"};
+    const char* deviceNames[] = {"NONE", "SD Card", "CC1101", "NRF24"};
     Serial.print("Selected:    ");
     Serial.println(deviceNames[currentDevice]);
 
@@ -354,13 +315,6 @@ void spiPrintStatus() {
     Serial.println(digitalRead(NRF24_CSN) == LOW ? "SELECTED" : "idle");
     #else
     Serial.println("  NRF24:    DISABLED");
-    #endif
-
-    #if CYD_HAS_PN532
-    Serial.print("  PN532 (GPIO 17):   ");
-    Serial.println(digitalRead(PN532_CS) == LOW ? "SELECTED" : "idle");
-    #else
-    Serial.println("  PN532:    DISABLED");
     #endif
 
     Serial.println("═══════════════════════════════════════════════════════════");

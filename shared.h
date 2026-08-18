@@ -11,7 +11,7 @@
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HALEHOUND COLOR PALETTE
-// Jesse's Custom: Red/Purple/Pink theme (no yellow/orange)
+// EVA-02 Theme: Dark red / orange-red (Asuka's plugsuit palette)
 // Theme colors are extern — runtime-adjustable for colorblind modes
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -23,10 +23,13 @@ extern uint16_t HALEHOUND_VIOLET;    // Accent color
 extern uint16_t HALEHOUND_CYAN;      // Text color
 extern uint16_t HALEHOUND_GREEN;     // Secondary accent
 
-// Fixed colors — never change with color mode
-const uint16_t HALEHOUND_DARK = 0x2841;     // #2B080A - Dark backgrounds
-const uint16_t HALEHOUND_BLACK = 0x0000;    // #000000 - Pure black
-const uint16_t HALEHOUND_GUNMETAL = 0x18E3; // #1C1C1C - Gunmetal gray
+// Background colors — also switched by applyColorMode()/theme_eva02 at runtime
+extern uint16_t HALEHOUND_DARK;      // Dark tile/icon-bar background
+extern uint16_t HALEHOUND_BLACK;     // Screen background
+extern uint16_t HALEHOUND_GUNMETAL;  // Dark gray (secondary/disabled)
+
+// Cosmetic theme selector — Settings > Theme (Classic vs EVA-02)
+extern bool theme_eva02;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LEGACY COLOR MAPPINGS (for compatibility with original code)
@@ -58,6 +61,8 @@ const uint16_t DARK_GRAY = HALEHOUND_GUNMETAL;
 #define TFTWHITE     0xFFFF
 #define TFT_GRAY      0x8410
 #define SELECTED_ICON_COLOR HALEHOUND_MAGENTA
+// Routes every raw tft.fillScreen(TFT_BLACK) call through the runtime theme background
+#define TFT_BLACK     HALEHOUND_BLACK
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MENU STATE VARIABLES

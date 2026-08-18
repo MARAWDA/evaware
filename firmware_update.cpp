@@ -3,6 +3,13 @@
 // I flash new firmware.bin from my SD card — no laptop needed
 // My pattern: same as my serial_monitor.cpp / gps_module.cpp
 // Created: 2026-02-15
+//
+// PLAIN-ENGLISH OVERVIEW
+// This is a mini in-device flasher. It lists .bin firmware files found on the
+// SD card, lets you tap one, double-checks it looks like a real valid ESP32
+// firmware image (size + magic byte), then writes it into flash using the
+// ESP32's built-in `Update` library and reboots into it. Handy for updating
+// the board without plugging it back into a computer.
 // =============================================================================
 
 #include "firmware_update.h"

@@ -4,6 +4,13 @@
 // Created: 2026-02-07
 // Updated: 2026-02-19 — Tactical instrument panel (compass, speed arc,
 //                        sat bars, crosshairs, HDOP, pulsing fix dot)
+//
+// PLAIN-ENGLISH OVERVIEW
+// Reads NMEA text sentences streamed from a cheap GPS module over a serial
+// UART, using the TinyGPSPlus library to parse them into real numbers (lat,
+// lon, speed, satellite count). Everything else in this file is just drawing
+// that data as a compass, speedometer arc, and satellite bars on screen. Other
+// modules (wardriving.cpp) call into here to get the current GPS fix.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "gps_module.h"

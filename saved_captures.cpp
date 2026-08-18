@@ -6,6 +6,11 @@
 // Browse, inspect, and delete captured EAPOL handshake and PMKID files.
 // NOTE: Does NOT call SD.end() — just deselects CS pin on cleanup.
 //       SD.end() destabilizes shared SPI bus (CC1101, NRF24 share VSPI).
+//
+// PLAIN-ENGLISH OVERVIEW
+// A simple file browser scoped to the /eapol folder on the SD card — lists
+// captured handshake files with size/date, lets you tap one to see details,
+// and lets you delete old ones to free up space. No networking happens here.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "saved_captures.h"

@@ -3,6 +3,13 @@
 // Hardware UART passthrough for target device debug ports
 // Pattern: Same as gps_module.cpp - standalone functions, own screen loop
 // Created: 2026-02-15
+//
+// PLAIN-ENGLISH OVERVIEW
+// Turns the CYD into a basic USB-to-serial terminal, like PuTTY on a screen.
+// You wire the board's spare UART pins to another device's debug/console
+// port, pick a baud rate, and whatever text that device prints scrolls by on
+// the CYD screen in a ring buffer (a fixed-size list that overwrites its
+// oldest lines once full, so memory usage never grows).
 // =============================================================================
 
 #include "serial_monitor.h"

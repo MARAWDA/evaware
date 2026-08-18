@@ -3,6 +3,14 @@
 // WiGLE-compatible WiFi + BLE network logging with GPS
 // Created: 2026-02-07
 // Updated: 2026-02-24 — BLE logging, open network count, WiGLE v1.6
+//
+// PLAIN-ENGLISH OVERVIEW
+// "Wardriving" means scanning for WiFi/BLE networks while moving and logging
+// where each one was seen using GPS. This file is the data-logging engine:
+// it does the actual WiFi/BLE scans, de-duplicates networks already logged,
+// and writes rows to a CSV file on the SD card in the WiGLE format (a
+// standard used by network-mapping tools). wardriving_screen.cpp is the
+// visual layer that calls into these functions and draws the live UI.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "wardriving.h"

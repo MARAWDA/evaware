@@ -46,6 +46,14 @@
 // │   - Multi-platform captive portal detection                             │
 // └──────────────────────────────────────────────────────────────────────────┘
 //
+// PLAIN-ENGLISH OVERVIEW
+// Each attack above (PacketMonitor, BeaconSpammer, Deauther, etc.) lives in
+// its own C++ "namespace" inside wifi_attacks.cpp — think of a namespace as
+// a mini self-contained program with its own setup()/loop()/cleanup(). The
+// main .ino file just calls Namespace::setup() when you tap that menu icon,
+// then Namespace::loop() every frame, then Namespace::cleanup() when you back
+// out. If you're trying to understand one specific attack, search this file
+// for "namespace <AttackName>" and read top to bottom from there.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include <Arduino.h>

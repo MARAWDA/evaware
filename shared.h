@@ -6,6 +6,13 @@
 // Color palette and shared state variables
 // Created: 2026-02-06
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// PLAIN-ENGLISH OVERVIEW
+// This file has no logic — it's just shared "global" variables every other
+// file includes: the theme colors (so changing the palette in one place
+// updates every screen) and a handful of booleans that track menu state
+// (are we in a submenu right now, is a feature currently running, etc).
+// ═══════════════════════════════════════════════════════════════════════════
 
 #include "cyd_config.h"
 

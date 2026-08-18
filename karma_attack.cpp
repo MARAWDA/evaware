@@ -6,6 +6,14 @@
 //
 // Phase 1: COLLECT — sniff probe requests, build SSID pool
 // Phase 2: ATTACK — spawn matching rogue AP, harvest credentials
+//
+// PLAIN-ENGLISH OVERVIEW
+// Phones constantly "call out" looking for WiFi networks they remember (probe
+// requests) even when not connected to anything. This module silently listens
+// for those calls to learn which network names nearby phones are hoping to
+// find, then pretends to BE one of those networks so the phone auto-connects
+// to the ESP32 instead of the real router — at which point a fake login page
+// can capture whatever credentials are typed in.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "karma_attack.h"

@@ -2,6 +2,12 @@
 // HaleHound-CYD Utility Functions Implementation
 // Button handling, display helpers, common utilities
 // Created: 2026-02-06
+//
+// PLAIN-ENGLISH OVERVIEW
+// A grab-bag of small helper functions shared by every other file: reading
+// the virtual buttons, drawing common UI pieces (status bar, title bar), and
+// the theme color palette. If you see a function called from many different
+// modules that isn't attack-specific, it's probably defined here.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "utils.h"

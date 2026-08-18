@@ -15,6 +15,17 @@
 // GitHub: github.com/JesseCHale/ESP32-DIV
 //
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// PLAIN-ENGLISH OVERVIEW
+// This is the file the ESP32 actually boots into. Arduino runs setup() once
+// then loop() forever. Everything below is: draw the menu grid, wait for a
+// touch, and when an icon is tapped, hand control over to that feature's own
+// module (wifi_attacks.cpp, bluetooth_attacks.cpp, etc.) until the user backs
+// out. Every feature module follows the same pattern: a setup() to start it,
+// a loop() called every frame while it's open, and a cleanup() when you exit.
+// This .ino file is just the "traffic cop" that decides which module's
+// setup/loop/cleanup to call based on what menu item is selected.
+// ═══════════════════════════════════════════════════════════════════════════
 
 #include <SPI.h>
 #include <TFT_eSPI.h>

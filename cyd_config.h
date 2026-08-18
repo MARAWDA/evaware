@@ -10,6 +10,15 @@
 // BOARD SELECTION: Set by PlatformIO build flags (-DCYD_E32R28T=1, -DCYD_E32R35T=1)
 // Default: CYD_28 when no flag specified (backwards compatible)
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// PLAIN-ENGLISH OVERVIEW
+// One codebase supports 3 physical boards with different screen sizes and
+// wiring. Instead of 3 copies of the firmware, PlatformIO passes a #define
+// flag when building (see platformio.ini), and every file in this project
+// checks that flag with #ifdef to pick the right pin numbers/screen size.
+// This file is the single place all those pin numbers live — if you're
+// wondering "what GPIO does X use", look here first.
+// ═══════════════════════════════════════════════════════════════════════════
 
 // E32R28T inherits CYD_28 display/touch — same ILI9341, XPT2046, 240x320
 #ifdef CYD_E32R28T

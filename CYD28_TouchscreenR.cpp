@@ -26,6 +26,14 @@
  *
  */
 
+// PLAIN-ENGLISH OVERVIEW (added for HaleHound-CYD)
+// This is a third-party touchscreen driver, not written for this project —
+// don't worry about understanding it deeply. "Bit banged SPI" means it talks
+// to the touch chip by manually toggling GPIO pins in code instead of using
+// the ESP32's dedicated SPI hardware, which avoids clashing with the radios
+// on the real SPI bus. touch_buttons.cpp is the file that actually calls into
+// this one to get raw touch coordinates.
+
 #include "CYD28_TouchscreenR.h"
 #include <SPI.h>
 

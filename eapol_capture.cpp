@@ -6,6 +6,15 @@
 //
 // PMKID extraction from EAPOL msg1 RSN IE — on-device extraction.
 // HaleHound extracts the PMKID on-device and writes hashcat-ready .hc22000.
+//
+// PLAIN-ENGLISH OVERVIEW
+// When a phone/laptop connects to WiFi, it exchanges 4 encrypted "handshake"
+// messages with the router (the WPA password check). This module scans for
+// a target network, kicks a connected device offline for a moment (deauth) so
+// it reconnects and re-does that handshake, and captures the raw handshake
+// bytes over the air. It never cracks the password itself — it just saves the
+// handshake to the SD card in a format the `hashcat` tool can try to crack
+// later, offline, on a real computer.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "eapol_capture.h"

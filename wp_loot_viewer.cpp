@@ -7,6 +7,10 @@
 // Follows SavedCaptures pattern: namespace with setup/loop/isExitRequested/cleanup.
 // NOTE: Does NOT call SD.end() — just deselects CS pin on cleanup.
 //       SD.end() trashes SPI bus and prevents wpSaveLoot() from working.
+//
+// PLAIN-ENGLISH OVERVIEW
+// Same idea as saved_captures.cpp, but for WhisperPair attack reports instead
+// of WiFi handshakes — a simple SD card file browser scoped to /wp_loot.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "wp_loot_viewer.h"

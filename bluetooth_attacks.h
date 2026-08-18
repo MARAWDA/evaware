@@ -33,6 +33,14 @@
 // │   - Will display hardware not available message                         │
 // └──────────────────────────────────────────────────────────────────────────┘
 //
+// PLAIN-ENGLISH OVERVIEW
+// Same pattern as wifi_attacks.h: each attack is its own namespace with
+// setup()/loop()/cleanup(). BLE (Bluetooth Low Energy) is just short-range
+// wireless advertising — these modules build and broadcast fake BLE packets
+// that phones interpret as real devices (AirPods, beacons, etc.), or scan for
+// real BLE devices nearby. BleJammer is the odd one out — it repurposes the
+// small NRF24 radio (normally used elsewhere) to blast noise on 2.4GHz.
+//
 // SUPPORTED DEVICES (BleSpoofer):
 // 1.  AirPods              10. Beats Studio Buds
 // 2.  AirPods Pro          11. Beats Flex

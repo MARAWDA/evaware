@@ -11,6 +11,13 @@
 //   Core 0 = iotScanTask — all TCP networking (port scan, brute, MQTT, telnet)
 //   Core 1 = Display + touch — kill feed, stats, Digital Plague animation
 //
+// PLAIN-ENGLISH OVERVIEW
+// Once connected to a WiFi network, this module pings every device on the
+// local subnet (192.168.x.1 through .254), checks which common ports are open
+// (cameras, routers, MQTT brokers), then tries a small dictionary of default
+// factory passwords against anything that answers. Everything runs on ESP32
+// "Core 0" (a second CPU core) so the touchscreen UI on "Core 1" stays
+// responsive while the scan grinds in the background.
 // =============================================================================
 
 #include "iot_recon.h"

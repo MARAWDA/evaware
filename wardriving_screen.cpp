@@ -3,6 +3,12 @@
 // Full-screen wardriving UI with WiFi + BLE scan, GPS, and SD logging
 // Created: 2026-02-16
 // Updated: 2026-02-24 — BLE scanning, faster interval, redesigned display
+//
+// PLAIN-ENGLISH OVERVIEW
+// This is the screen/UI half of wardriving. It calls into wardriving.cpp to
+// do the actual scanning and logging, and its own job is just alternating
+// between a WiFi scan and a BLE scan every cycle, then drawing the results,
+// GPS status, and a blinking "recording" indicator on screen.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "wardriving_screen.h"

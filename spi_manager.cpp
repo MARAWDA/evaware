@@ -2,6 +2,14 @@
 // HaleHound-CYD SPI Bus Manager Implementation
 // Manages shared VSPI bus between SD Card, CC1101, NRF24L01, and PN532
 // Created: 2026-02-06
+//
+// PLAIN-ENGLISH OVERVIEW
+// Several hardware devices (SD card, radios) are wired to the same SPI bus,
+// which only lets ONE device "talk" at a time. This file is the traffic
+// controller: before any code touches a device, it calls into here to make
+// sure every other device's chip-select pin is pulled high (disabled) and
+// only the wanted one is pulled low (enabled). Skipping this step is what
+// causes corrupted SD card reads or radio glitches.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "spi_manager.h"

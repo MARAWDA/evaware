@@ -5,6 +5,13 @@
 // to avoid VSPI conflict with NRF24/CC1101 radios. Proven working approach.
 // Created: 2026-02-06
 // Updated: 2026-02-11 - Switched to Piotr Zapart's CYD28_TouchscreenR library
+//
+// PLAIN-ENGLISH OVERVIEW
+// The CYD has no physical D-pad — this file turns raw touchscreen taps into
+// "virtual buttons" (UP/DOWN/SELECT/BACK) by checking which screen zone was
+// tapped, so the rest of the firmware can just ask "was UP pressed?" without
+// caring that it's actually a touchscreen underneath. It also owns touch
+// calibration (mapping raw sensor coordinates to actual screen pixels).
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "touch_buttons.h"

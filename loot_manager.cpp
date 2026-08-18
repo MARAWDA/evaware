@@ -10,6 +10,12 @@
 //
 // NOTE: Does NOT call SD.end() — just deselects CS pin on cleanup.
 //       SD.end() destabilizes shared SPI bus (CC1101, NRF24 share VSPI).
+//
+// PLAIN-ENGLISH OVERVIEW
+// This is just a menu that points to the various "loot" browsers (captured
+// handshakes, IoT recon results, credentials, etc.) so you don't have to hunt
+// through separate menus to find what you captured. It doesn't capture
+// anything itself — it reads existing files off the SD card and displays them.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #include "loot_manager.h"

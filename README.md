@@ -1,4 +1,3 @@
-```
               _                                                   _
          .k$$$$$g,                                           ,g$$$$$k.
       .k$$$$$$$$$$$a.                                     .a$$$$$$$$$$$k.
@@ -13,6 +12,44 @@
      '*?- '?$$a louSxuS?                               ?xuSxuol a$$?' -?*'
            i$$$$$$$$$$$S                               S$$$$$$$$$$$i
               ?$$$?-                                       -?$$$?
+                              *I built this.*
+
+================================================================================
+               HALEHOUND-CYD FIRMWARE
+================================================================================
+  Repository:   https://github.com/JesseCHale/HaleHound-CYD
+  Author:       Jesse C. Hale (JesseCHale)
+  Website:      https://github.com/JesseCHale
+================================================================================
+
+
+                              MIT LICENSE
+
+Copyright (c) 2026 Jesse C. Hale (HaleHound-CYD Edition)
+Copyright (c) 2023 CiferTech (original ESP32-DIV)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+================================================================================
+                           PROJECT DESCRIPTION
+================================================================================
 
      ██░ ██  ▄▄▄       ██▓    ▓█████  ██░ ██  ▒█████   █    ██  ███▄    █ ▓█████▄
     ▓██░ ██▒▒████▄    ▓██▒    ▓█   ▀ ▓██░ ██▒▒██▒  ██▒ ██  ▓██▒ ██ ▀█   █ ▒██▀ ██▌
@@ -814,140 +851,182 @@ Load and replay previously saved SubGHz signal profiles from the SD card.
 
 ---
 
-### SIGINT Operations
+================================================================================
+                            SCOPE OF LICENSE
+================================================================================
 
-Advanced signal intelligence modules for passive and active wireless reconnaissance.
+This license applies to all contents of this repository, including but not
+limited to:
 
-#### EAPOL Capture
+  - All firmware source code (.cpp, .h, .ino files)
+  - Configuration files and build scripts
+  - Documentation and README files
+  - Hardware pin mappings and schematics references
+  - Menu definitions and UI assets
+  - Supporting libraries developed for this project
+  - ASCII art and branding assets
 
-Captures WPA/WPA2 4-way handshakes and PMKID from nearby networks. Forces a deauthentication to trigger reauthentication, then captures the EAPOL exchange.
+THIRD-PARTY COMPONENTS:
+This project builds upon and includes components from various open-source
+projects. Where applicable, individual files or directories may contain
+their own licensing terms. Notable dependencies include:
 
-```
-┌──────────────────────────────────────────────────┐
-│  ATTACK FLOW                                     │
-│                                                  │
-│  1. Scan for target networks                     │
-│  2. User selects target AP                       │
-│  3. Set WiFi to target channel                   │
-│  4. Enable promiscuous mode                      │
-│  5. Send deauth to force reauthentication        │
-│  6. Capture EAPOL frames:                        │
-│     - Message 1: AP → Client (ANonce + PMKID)    │
-│     - Message 2: Client → AP (SNonce)            │
-│     - Message 3: AP → Client (GTK)               │
-│     - Message 4: Client → AP (Confirmation)      │
-│  7. Extract PMKID from Message 1 RSN IE          │
-│  8. Save to SD card in hashcat format            │
-│  9. Display capture status on screen             │
-│                                                  │
-│  Output: .hc22000 or .hccapx for offline crack   │
-└──────────────────────────────────────────────────┘
-```
+  - ESP32 Arduino Core (LGPL)
+  - TFT_eSPI library
+  - RCSwitch library
+  - RF24 library
+  - TinyGPSPlus library
+  - ArduinoJson library
+  - SmartRC-CC1101-Driver-Lib
+  - Various ESP32 peripheral libraries
 
-#### Karma Attack
+Users are responsible for compliance with all applicable third-party licenses.
 
-Automatically responds to all probe requests with matching beacon frames, tricking devices into connecting to the ESP32. Combined with the captive portal for credential harvesting.
 
-```
-┌──────────────────────────────────────────────┐
-│  ATTACK FLOW                                 │
-│                                              │
-│  1. Enable promiscuous mode                  │
-│  2. Listen for probe request frames          │
-│  3. For each probed SSID:                    │
-│     → Create matching beacon response        │
-│     → Broadcast as that network              │
-│  4. Client auto-connects (trusts SSID)       │
-│  5. DNS hijack to captive portal             │
-│  6. Harvest credentials                      │
-│                                              │
-│  Captures: "Home_WiFi", "Starbucks",         │
-│  "HOTEL_GUEST" — whatever devices remember   │
-└──────────────────────────────────────────────┘
-```
+================================================================================
+                        ATTRIBUTION REQUIREMENTS
+================================================================================
 
-#### Wardriving
+When using, modifying, or distributing this software, the following
+attribution requirements apply:
 
-GPS-tagged WiFi scanning. Scans for access points while recording GPS coordinates, creating a log of every network and its physical location. Requires GPS module.
+HALEHOUND-CYD ATTRIBUTION:
+  - Jesse C. Hale (JesseCHale) developed the HaleHound-CYD Edition
+  - HaleHound-CYD: https://github.com/JesseCHale/HaleHound-CYD
 
-```
-┌────────────────────────────────────┐
-│  DATA COLLECTED PER AP             │
-│                                    │
-│  SSID, BSSID, Channel, RSSI,      │
-│  Encryption type, Latitude,        │
-│  Longitude, Altitude, Timestamp    │
-│                                    │
-│  Saved to SD card as CSV/JSON      │
-└────────────────────────────────────┘
-```
+FOR DIRECT USE:
+  - Retain this LICENSE file in any distribution
+  - Maintain copyright notices in source files
 
-#### Saved Captures
+FOR MODIFICATIONS AND FORKS:
+  - Include original copyright notice
+  - Clearly indicate modifications made
+  - Suggested attribution format:
 
-Browse and manage previously captured EAPOL handshakes and PMKID hashes stored on the SD card.
+    "Based on HaleHound-CYD by Jesse C. Hale"
+    "https://github.com/JesseCHale/HaleHound-CYD"
 
----
+FOR DERIVATIVE WORKS:
+  - You may create derivative works under the same MIT license
+  - Original attribution chain must be preserved
+  - You may add your own copyright for your modifications
 
-### Tools
 
-#### Serial Monitor
+================================================================================
+                          CONTRIBUTION TERMS
+================================================================================
 
-UART passthrough terminal for hardware hacking. Connect to a target device's debug port and read/send serial data directly from the CYD screen.
+By submitting contributions to this repository (via pull requests, issues,
+or other means), you agree to the following:
 
-- **P1 Connector:** Full duplex via UART0 (GPIO 3 RX / GPIO 1 TX) — shared with USB serial
-- **Speaker Pin:** RX only via GPIO 26 — dedicated, no USB conflict
-- **Default baud:** 115200 (configurable)
+  1. Your contributions are provided under the same MIT License
+  2. You have the right to submit the contribution
+  3. You grant the project maintainer rights to use, modify, and distribute
+     your contribution as part of this project
+  4. Contributions become part of the collective work and are subject to
+     this license
 
-#### Update Firmware
+Contributions are welcome and encouraged. Please ensure your submissions:
+  - Follow the existing code style and structure
+  - Include appropriate documentation
+  - Are tested on compatible hardware when possible
+  - Do not introduce regressions in existing functionality
 
-Flash a new firmware `.bin` file directly from the SD card without a computer. Browse SD card, select a `.bin`, confirm, and the ESP32 applies the OTA update and reboots.
 
-#### Touch Calibrate
+================================================================================
+                     DISCLAIMER & RESPONSIBLE USE
+================================================================================
 
-Interactive 4-corner touchscreen calibration tool. Tap crosshairs at each corner of the screen to compute the raw touch-to-screen coordinate mapping for your specific board. Takes 5-sample averages at each point for accuracy.
+IMPORTANT: READ THIS SECTION CAREFULLY
 
-**Auto-calibration:** On first boot after flashing (or after an EEPROM reset), the firmware automatically runs touch calibration before showing the main menu. This ensures every board gets a working touch mapping immediately — no need to navigate menus with broken touch.
+This firmware and associated tools are provided strictly for:
 
-**EEPROM persistence:** Calibration values are saved to EEPROM and survive power cycles. Recalibrate anytime from Tools > Touch Calibrate. Press BOOT button to cancel calibration.
+  [+] AUTHORIZED PENETRATION TESTING
+      Use only on networks and systems you own or have explicit written
+      permission to test.
 
-#### GPS
+  [+] SECURITY RESEARCH
+      For studying wireless vulnerabilities and developing defensive
+      measures in controlled environments.
 
-Live GPS satellite view with NMEA data parsing via TinyGPSPlus. Displays satellite count, fix status, latitude, longitude, altitude, speed, and HDOP. Auto-scans GPIO 3 (P1 connector) at 9600 baud.
+  [+] EDUCATIONAL PURPOSES
+      Learning about wireless security, RF protocols, and ethical
+      hacking methodologies.
 
-#### Radio Test
+  [+] PROFESSIONAL SECURITY ASSESSMENTS
+      Conducted by qualified professionals with proper authorization
+      and scope agreements.
 
-Interactive SPI hardware verification tool for NRF24L01+ and CC1101 radios. Tests SPI communication by reading chip identification registers (NRF24 CONFIG register 0x08, CC1101 VERSION register 0x14) and provides smart failure diagnostics — distinguishes between wiring issues, dead chips, and clone chip detection. Includes battery voltage readout and 4-page wiring block diagrams with KiCad-style layout showing colored trace lines, solder dots, and chip boxes for NRF24, GPS, and CC1101 connections.
+  [+] HAM RADIO AND RF EXPERIMENTATION
+      In compliance with local regulations and licensing requirements.
 
----
+THE FOLLOWING USES ARE PROHIBITED:
 
-### Settings
+  [-] Unauthorized access to wireless networks or systems
+  [-] Disruption of legitimate wireless communications
+  [-] Jamming or interfering with emergency services or aviation
+  [-] Any activity that violates local, state, federal, or international law
+  [-] Malicious attacks against individuals or organizations
+  [-] Use against systems without explicit written authorization
 
-#### Brightness
+REGULATORY NOTICE:
+  - Certain functions may be restricted or prohibited in your jurisdiction
+  - RF transmission capabilities must comply with local regulations
+  - Users are responsible for obtaining necessary licenses (e.g., HAM radio)
+  - Some features may violate FCC Part 15 or equivalent regulations
 
-Backlight PWM control with DARKER/BRIGHTER touch buttons. Range: 10-255. Saved to EEPROM.
+LEGAL NOTICE:
+Unauthorized access to computer systems and wireless networks is a crime in
+most jurisdictions. Jamming or interfering with wireless communications may
+violate federal law (e.g., 47 U.S.C. § 333). Users are solely responsible
+for ensuring compliance with all applicable laws and regulations.
 
-#### Screen Timeout
+The author(s) assume NO LIABILITY for any misuse, damage, or legal
+consequences arising from the use of this software or hardware.
 
-Auto-dim after inactivity. Options: 30 sec, 1 min, 2 min, 5 min, 10 min, Never. Touch or BOOT button to wake. Saved to EEPROM.
+By using this software, you acknowledge that:
+  - You understand the legal implications of wireless security testing
+  - You will obtain proper authorization before any testing
+  - You accept full responsibility for your actions
+  - The authors bear no responsibility for unauthorized use
+  - You will comply with all applicable RF and wireless regulations
 
-#### Swap Colors
 
-Toggle between BGR (default) and RGB color order for the ILI9341 display. Some CYD board batches have panels wired with swapped color channels, causing reds to appear blue and vice versa. This setting writes the MADCTL register directly and is saved to EEPROM.
+================================================================================
+                         HARDWARE DISCLAIMER
+================================================================================
 
-#### Rotation
+This firmware is designed for specific ESP32-based hardware configurations.
+Improper use may result in:
 
-Different CYD manufacturers mount the LCD panel in different orientations. If your display appears upside-down or sideways after flashing, use this setting to correct it. The UI is **portrait only** (taller than wide) — this setting rotates the portrait layout to compensate for how your board's panel is physically mounted.
+  - Damage to your ESP32 device or connected peripherals
+  - RF interference with nearby devices
+  - Violation of radio frequency regulations
+  - Voiding of hardware warranties
 
-| Option | Use When |
-|--------|----------|
-| Standard (0°) | Display is correct — most common |
-| Flipped 180° | Display is upside-down |
-| 90° CW | Panel is mounted sideways (clockwise) |
-| 90° CCW | Panel is mounted sideways (counter-clockwise) |
+The authors provide no warranty for hardware compatibility or safety.
+Users assume all risk when flashing and operating this firmware.
 
-Touch input automatically recalibrates after every rotation change. The selected rotation is saved to EEPROM and persists across power cycles.
+SUPPORTED HARDWARE:
+  - ESP32-2432S028 (CYD 2.8" - primary, fully tested)
+  - ESP32-3248S035 (CYD 3.5" - pin defines ready, untested)
+  - CC1101 HW-863 SubGHz module
+  - NRF24L01+PA+LNA 2.4GHz module
+  - GT-U7 / NEO-6M GPS module
+  - MicroSD card (built-in CYD slot)
 
-**Note:** 90° CW and 90° CCW exist only to compensate for sideways-mounted LCD panels. They are **not** a landscape mode.
+Always verify pin mappings and hardware compatibility before use.
+
+
+================================================================================
+
+================================================================================
+
+     "Security Through Understanding, Protection Through Knowledge"
+
+           Part of the HaleHound Security Research Collection
+
+    HaleHound-CYD - Full CYD Touchscreen Offensive Security Toolkit
 
 #### Device Info
 

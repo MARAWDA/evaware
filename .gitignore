@@ -1,0 +1,26 @@
+# PlatformIO build artifacts
+.pio/
+.vscode/
+
+# Backup files
+*.bak
+*.bak2
+*.bak3
+*.orig
+*.tmp
+
+# Development notes (not for release)
+FIRMWARE_PORT_PLAN.md
+PROGRESS_*.md
+
+# Find You private keys (NEVER commit — contains location retrieval keys)
+findyou_keys.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~

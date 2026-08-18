@@ -21,6 +21,7 @@
 #include <WiFi.h>
 #include <BLEDevice.h>
 #include <SD.h>
+#include <ELECHOUSE_CC1101_SRC_DRV.h>
 
 // HaleHound-CYD modules
 #include "cyd_config.h"

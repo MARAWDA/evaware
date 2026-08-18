@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asuka // HaleHound Flasher</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <p class="eyebrow">NERV // EVA-02 // LOCAL FLASH SYSTEM</p>
+        <h1>ASUKA // HALEHOUND FLASH</h1>
+      </div>
+      <div class="status-group">
+        <span class="status-label">STATUS</span>
+        <span class="status-dot">READY</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <div class="hero-column">
+        <div class="hero-visual panel">
+          <img src="{{ url_for('static', filename='zero-two.png') }}" alt="Zero Two illustration" />
+        </div>
+      </div>
+
+      <section class="panel panel-primary">
+        <div class="card-header">
+          <span class="section-tag">01</span>
+          <h2>UNIT LINK</h2>
+        </div>
+
+        <div class="field-group">
+          <label for="boardSelect">TARGET UNIT</label>
+          <select id="boardSelect">
+            <option value="esp32-cyd">Cheap Yellow Display 2.8"</option>
+            <option value="esp32-e32r35t">QDtech E32R35T 3.5"</option>
+            <option value="esp32-e32r28t">QDtech E32R28T 2.8"</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="flashModeSelect">FLASH MODE</label>
+          <select id="flashModeSelect">
+            <option value="single">Single file (recommended)</option>
+            <option value="split">Four files (fallback / all boards)</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="firmwareSelect">RECOMMENDED FIRMWARE</label>
+          <select id="firmwareSelect"></select>
+          <div id="firmwareList" class="firmware-list" aria-live="polite"></div>
+        </div>
+
+        <div class="field-group">
+          <label for="customFirmware">CUSTOM FILE</label>
+          <input id="customFirmware" type="file" accept=".bin,.img" />
+        </div>
+
+        <div class="field-group">
+          <label for="portSelect">SERIAL LINK</label>
+          <select id="portSelect">
+            <option value="">SCANNING...</option>
+          </select>
+        </div>
+
+        <div class="button-row">
+          <button id="refreshPorts" class="secondary">REFRESH</button>
+          <button id="flashBtn" class="primary">FLASH</button>
+        </div>
+      </section>
+
+      <aside class="panel info-panel">
+        <div class="card-header">
+          <span class="section-tag">02</span>
+          <h2>PRE-FLIGHT</h2>
+        </div>
+        <ol>
+          <li>Install the USB driver if Windows does not detect the board.</li>
+          <li>Use a data USB cable, not a charge-only cable.</li>
+          <li>Unplug other USB serial devices to reduce interference.</li>
+          <li>Connect only the target board and select the matching COM port.</li>
+          <li>Keep the unit connected until the transfer completes.</li>
+        </ol>
+
+        <div class="mini-box">
+          <h3>DRIVER SET</h3>
+          <ul>
+            <li>CH340: WCH CH341SER</li>
+            <li>CP210x: Silicon Labs VCP</li>
+          </ul>
+        </div>
+
+        <div class="mini-box">
+          <h3>HOSYOND BOARD (AMAZON)</h3>
+          <ul>
+            <li><strong>3.5" ST7796 320x480</strong> &rarr; board <code>esp32-e32r35t</code> &rarr; <code>HaleHound-E32R35T-FULL.bin</code></li>
+            <li><strong>2.8" ILI9341 240x320</strong> &rarr; board <code>esp32-cyd</code> &rarr; <code>HaleHound-CYD-FULL.bin</code></li>
+          </ul>
+          <a class="mini-link" href="https://www.amazon.ca/gp/product/B0D93MBWC2" target="_blank" rel="noopener noreferrer">View listing on Amazon</a>
+        </div>
+      </aside>
+    </main>
+
+    <section class="panel log-panel">
+      <div class="card-header">
+        <span class="section-tag">03</span>
+        <h2>TRANSFER LOG</h2>
+      </div>
+      <pre id="logOutput">SYSTEM READY. TARGET UNIT CONFIRMED. SELECT SERIAL LINK AND EXECUTE FLASH SEQUENCE.</pre>
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

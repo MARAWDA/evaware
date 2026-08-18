@@ -125,14 +125,12 @@ All radios transmit at maximum power. No safety nets.
 | ESP32-2432S028 (2.8") | `esp32-cyd` | 240x320 ILI9341 | XPT2046 Resistive | **Fully Tested** |
 | QDtech E32R35T (3.5") | `esp32-e32r35t` | 320x480 ST7796 | XPT2046 Resistive | **Fully Tested** |
 | QDtech E32R28T (2.8") | `esp32-e32r28t` | 240x320 ILI9341 | XPT2046 Resistive | Supported |
-| NM-RF-Hat (2.8") | `esp32-cyd-hat` | 240x320 ILI9341 | XPT2046 Resistive | Supported |
 
 Board selection is automatic via PlatformIO build target. Build with:
 ```bash
 pio run -e esp32-cyd       # 2.8" CYD
 pio run -e esp32-e32r35t   # E32R35T 3.5"
 pio run -e esp32-e32r28t   # E32R28T
-pio run -e esp32-cyd-hat   # NM-RF-Hat
 ```
 
 ### E32R35T 3.5" Differences
@@ -1130,9 +1128,6 @@ pio run -e esp32-e32r35t
 
 # E32R28T variant
 pio run -e esp32-e32r28t
-
-# NM-RF-Hat variant
-pio run -e esp32-cyd-hat
 ```
 
 ### Flash

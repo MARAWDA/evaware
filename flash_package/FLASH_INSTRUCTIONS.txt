@@ -41,7 +41,7 @@ to compensate. This is NOT a landscape mode.
   CHOOSE YOUR BOARD
 ================================================================================
 
-Four boards are supported. Use the correct firmware file for your board.
+Three boards are supported. Use the correct firmware file for your board.
 
   CYD 2.8" (ESP32-2432S028):
     Single file:  HaleHound-CYD-FULL.bin
@@ -50,10 +50,6 @@ Four boards are supported. Use the correct firmware file for your board.
   QDtech E32R35T (3.5"):
     Single file:  HaleHound-E32R35T-FULL.bin
     Four file:    HaleHound-E32R35T.bin
-
-  NM-RF-Hat:
-    Single file:  HaleHound-CYD-HAT-FULL.bin
-    Four file:    HaleHound-CYD-HAT.bin
 
   QDtech E32R28T:
     Single file:  HaleHound-E32R28T-FULL.bin
@@ -205,10 +201,6 @@ Replace "HaleHound-CYD" below with your board's filename from above.
   QDtech E32R35T (3.5"):
     HaleHound-E32R35T-FULL.bin ..... 0x0 (single file, complete image)
     HaleHound-E32R35T.bin .......... 0x10000 (firmware only, 4-file method)
-
-  NM-RF-Hat:
-    HaleHound-CYD-HAT-FULL.bin ..... 0x0 (single file, complete image)
-    HaleHound-CYD-HAT.bin .......... 0x10000 (firmware only, 4-file method)
 
   QDtech E32R28T:
     HaleHound-E32R28T-FULL.bin ..... 0x0 (single file, complete image)

@@ -124,7 +124,6 @@ All radios transmit at maximum power. No safety nets.
 | ESP32-2432S028 (2.8") | `esp32-cyd` | 240x320 ILI9341 | **Primary - Fully Tested** |
 | QDtech E32R35T (3.5") | `esp32-e32r35t` | 320x480 ST7796 | **Fully Tested** |
 | QDtech E32R28T (2.8") | `esp32-e32r28t` | 240x320 ILI9341 | Supported |
-| NM-RF-Hat (2.8") | `esp32-cyd-hat` | 240x320 ILI9341 | Supported |
 
 Board selection is automatic via PlatformIO build target (see platformio.ini).
 

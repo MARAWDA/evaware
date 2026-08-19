@@ -475,6 +475,28 @@ void cleanup();
 }  // namespace AuthFlood
 
 // ═══════════════════════════════════════════════════════════════════════════
+// WIFI GUARDIAN - Passive Deauth Flood Detector
+// Listens in promiscuous mode and warns when nearby deauth/disassoc frames
+// spike above normal levels (a sign someone is running a deauther nearby)
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace WifiGuardian {
+
+// Initialize the guardian (starts promiscuous listening)
+void setup();
+
+// Main loop function - call repeatedly
+void loop();
+
+// Check if user requested exit
+bool isExitRequested();
+
+// Cleanup and release WiFi
+void cleanup();
+
+}  // namespace WifiGuardian
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SHARED WIFI UTILITIES
 // ═══════════════════════════════════════════════════════════════════════════
 

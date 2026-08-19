@@ -3643,6 +3643,120 @@ void cleanup() {
 
 }  // namespace AuthFlood
 
+// ═══════════════════════════════════════════════════════════════════════════
+// WIFI GUARDIAN IMPLEMENTATION
+// Passive deauth/disassoc flood detector — receive-only, sends nothing.
+// Hops the 3 most common channels and counts deauth-type management frames;
+// a sudden spike usually means someone nearby is running a deauth attack.
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace WifiGuardian {
+
+static bool initialized = false;
+static bool exitRequested = false;
+
+static volatile uint32_t deauthWindowCount = 0;  // deauth/disassoc seen since last tick
+static uint32_t totalDeauth = 0;
+static uint32_t deauthPerSec = 0;
+static unsigned long lastTick = 0;
+static unsigned long lastChannelHop = 0;
+static int hopIndex = 0;
+static const uint8_t hopChannels[] = {1, 6, 11};
+static const int hopChannelCount = 3;
+
+static const uint32_t FLOOD_THRESHOLD = 3;  // 3+ deauth frames in one second = alert
+
+static void IRAM_ATTR wgPromiscuousCB(void* buf, wifi_promiscuous_pkt_type_t type) {
+    if (type != WIFI_PKT_MGMT) return;
+    wifi_promiscuous_pkt_t* pkt = (wifi_promiscuous_pkt_t*)buf;
+    uint8_t frameSubtype = pkt->payload[0];
+    if (frameSubtype == 0xA0 || frameSubtype == 0xC0) {  // Disassoc or Deauth
+        deauthWindowCount++;
+    }
+}
+
+static void drawStatus(bool alert) {
+    tft.fillRect(0, SCALE_Y(70), SCREEN_WIDTH, SCALE_Y(120), HALEHOUND_BLACK);
+
+    if (alert) {
+        drawCenteredText(SCALE_Y(95), "DEAUTH FLOOD DETECTED", HALEHOUND_HOTPINK, 1);
+    } else {
+        drawCenteredText(SCALE_Y(95), "NETWORK LOOKS SAFE", HALEHOUND_GREEN, 1);
+    }
+
+    char buf[48];
+    snprintf(buf, sizeof(buf), "Deauth frames/sec: %u", (unsigned)deauthPerSec);
+    drawCenteredText(SCALE_Y(120), buf, HALEHOUND_BRIGHT, 1);
+
+    snprintf(buf, sizeof(buf), "Total seen: %u", (unsigned)totalDeauth);
+    drawCenteredText(SCALE_Y(140), buf, HALEHOUND_GUNMETAL, 1);
+
+    snprintf(buf, sizeof(buf), "Channel: %d", hopChannels[hopIndex]);
+    drawCenteredText(SCALE_Y(160), buf, HALEHOUND_GUNMETAL, 1);
+}
+
+void setup() {
+    exitRequested = false;
+    totalDeauth = 0;
+    deauthPerSec = 0;
+    deauthWindowCount = 0;
+    hopIndex = 0;
+    lastTick = millis();
+    lastChannelHop = millis();
+
+    clearScreen();
+    drawTitleBar("WIFI GUARDIAN");
+    drawCenteredText(SCALE_Y(45), "Passively watching for deauth attacks", HALEHOUND_CYAN, 1);
+
+    wifiPromiscuousInit();
+    esp_wifi_set_promiscuous_rx_cb(&wgPromiscuousCB);
+    esp_wifi_set_promiscuous(true);
+    esp_wifi_set_channel(hopChannels[hopIndex], WIFI_SECOND_CHAN_NONE);
+
+    drawStatus(false);
+    initialized = true;
+
+    #if CYD_DEBUG
+    Serial.println("[WIFI GUARDIAN] Started passive monitoring");
+    #endif
+}
+
+void loop() {
+    if (!initialized) return;
+
+    unsigned long now = millis();
+
+    // Hop between the 3 most common channels every 3s for broader coverage
+    if (now - lastChannelHop >= 3000) {
+        hopIndex = (hopIndex + 1) % hopChannelCount;
+        esp_wifi_set_channel(hopChannels[hopIndex], WIFI_SECOND_CHAN_NONE);
+        lastChannelHop = now;
+    }
+
+    // Tally deauth/disassoc frames once per second
+    if (now - lastTick >= 1000) {
+        deauthPerSec = deauthWindowCount;
+        deauthWindowCount = 0;
+        totalDeauth += deauthPerSec;
+        lastTick = now;
+        drawStatus(deauthPerSec >= FLOOD_THRESHOLD);
+    }
+}
+
+bool isExitRequested() { return exitRequested; }
+
+void cleanup() {
+    wifiCleanup();
+    initialized = false;
+    exitRequested = false;
+
+    #if CYD_DEBUG
+    Serial.println("[WIFI GUARDIAN] Cleanup complete");
+    #endif
+}
+
+}  // namespace WifiGuardian
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DEAUTH DETECT IMPLEMENTATION

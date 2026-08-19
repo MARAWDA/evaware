@@ -104,8 +104,8 @@ const unsigned char *bitmap_icons[NUM_MENU_ITEMS] = {
     bitmap_icon_skull_about
 };
 
-// WiFi Submenu - 9 items
-const int NUM_SUBMENU_ITEMS = 9;
+// WiFi Submenu - 10 items
+const int NUM_SUBMENU_ITEMS = 10;
 const char *submenu_items[NUM_SUBMENU_ITEMS] = {
     "Packet Monitor",
     "Beacon Spammer",
@@ -115,6 +115,7 @@ const char *submenu_items[NUM_SUBMENU_ITEMS] = {
     "Captive Portal",
     "Station Scanner",
     "Auth Flood",
+    "WiFi Guardian",
     "Back to Main Menu"
 };
 
@@ -127,6 +128,7 @@ const unsigned char *wifi_submenu_icons[NUM_SUBMENU_ITEMS] = {
     bitmap_icon_bash,
     bitmap_icon_graph,
     bitmap_icon_nuke,
+    bitmap_icon_signals,
     bitmap_icon_go_back
 };
 
@@ -522,7 +524,7 @@ void displayMenu() {
         tft.drawRect(4, barY + 2, SCREEN_WIDTH - 8, barH - 4, borderInner);
 
         // Nosifer 10pt glitch text centered
-        const char* label = btm ? "BLUE TEAM" : "VALHALLA";
+        const char* label = btm ? "BLUE TEAM" : "EVAWARE v0.0.1";
         tft.setFreeFont(&Nosifer_Regular10pt7b);
         int tw = tft.textWidth(label);
         int tx = (SCREEN_WIDTH - tw) / 2;
@@ -604,7 +606,7 @@ void handleWiFiSubmenuTouch() {
             delay(200);
 
             // Execute selected item
-            if (current_submenu_index == 8) { // Back
+            if (current_submenu_index == 9) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -790,6 +792,17 @@ void handleWiFiSubmenuTouch() {
                         if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
                     }
                     AuthFlood::cleanup();
+                    break;
+                case 8: // WiFi Guardian (defensive — no disclaimer needed, receive-only)
+                    WifiGuardian::setup();
+                    while (!feature_exit_requested) {
+                        WifiGuardian::loop();
+                        touchButtonsUpdate();
+                        if (WifiGuardian::isExitRequested()) feature_exit_requested = true;
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    WifiGuardian::cleanup();
                     break;
             }
 

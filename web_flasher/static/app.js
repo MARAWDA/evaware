@@ -20,6 +20,7 @@ const portSelect = document.getElementById('portSelect');
 const flashModeSelect = document.getElementById('flashModeSelect');
 const customFirmwareInput = document.getElementById('customFirmware');
 const flashBtn = document.getElementById('flashBtn');
+const eraseBtn = document.getElementById('eraseBtn');
 const refreshBtn = document.getElementById('refreshPorts');
 const logOutput = document.getElementById('logOutput');
 
@@ -184,6 +185,42 @@ flashBtn.addEventListener('click', async () => {
 });
 
 refreshBtn.addEventListener('click', refreshPorts);
+
+eraseBtn.addEventListener('click', async () => {
+  const port = portSelect.value;
+  if (!port) {
+    setLog('No COM port is selected. Refresh the ports list and choose the board connection.');
+    return;
+  }
+
+  if (!window.confirm(`Erase all flash contents on ${port}? This cannot be undone.`)) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('port', port);
+  eraseBtn.disabled = true;
+  flashBtn.disabled = true;
+  eraseBtn.textContent = 'Erasing...';
+  setLog(`Erasing all flash contents on ${port}...`);
+
+  try {
+    const response = await fetch('/api/erase', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await response.json();
+    setLog(data.ok
+      ? 'Flash erased successfully. Select a firmware image and flash the board.'
+      : (data.output || 'Flash erase failed.'));
+  } catch (error) {
+    setLog('The erase request failed. Make sure the web server is running and the board is connected.');
+  } finally {
+    eraseBtn.disabled = false;
+    flashBtn.disabled = false;
+    eraseBtn.textContent = 'Erase flash';
+  }
+});
 
 updateRecommendedFiles();
 loadFiles();

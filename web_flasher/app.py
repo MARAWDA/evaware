@@ -206,6 +206,42 @@ def api_flash():
     })
 
 
+@app.post("/api/erase")
+def api_erase():
+    port = (request.form.get("port") or "").strip()
+    if not port:
+        return jsonify({"ok": False, "output": "No serial port was selected."}), 400
+
+    command = [
+        sys.executable,
+        "-m",
+        "esptool",
+        "--chip",
+        "esp32",
+        "--port",
+        port,
+        "--before",
+        "default_reset",
+        "--after",
+        "hard_reset",
+        "erase_flash",
+    ]
+
+    try:
+        result = subprocess.run(command, capture_output=True, text=True)
+    except FileNotFoundError:
+        return jsonify({
+            "ok": False,
+            "output": "esptool is not installed. Run: py -m pip install -r web_flasher/requirements.txt",
+        }), 500
+
+    output = (result.stdout or "") + (result.stderr or "")
+    return jsonify({
+        "ok": result.returncode == 0,
+        "output": output.strip() or "Erase finished.",
+    })
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Local ESP32 web flasher")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind the webpage to")

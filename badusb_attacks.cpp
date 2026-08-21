@@ -516,7 +516,7 @@ void setup() {
         drawCenteredText(120, "HEAP ALLOC FAILED", HALEHOUND_HOTPINK, 2);
         return;
     }
-    bu->selectedPayload = BU_RICKROLL;  // Default to safe demo payload
+    bu->selectedPayload = BU_RICKROLL;
 
     tft.fillScreen(HALEHOUND_BLACK);
     drawStatusBar();
@@ -535,7 +535,8 @@ void setup() {
     esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P9);
 
     if (ensureSdAndScripts()) {
-        setLoadStatus("SD scripts ready");
+        bu->selectedPayload = BU_CUSTOM_STRING;
+        loadSelectedScriptFromSd();
     }
 
     buBleInitialized = true;
@@ -577,6 +578,13 @@ void loop() {
                 if (bu->injecting) {
                     bu->injecting = false;
                 } else if (bu->connected) {
+                    if (bu->selectedPayload == BU_CUSTOM_STRING &&
+                        (bu->customLen == 0 || buSdFileCount == 0)) {
+                        if (!loadSelectedScriptFromSd() || bu->customLen == 0) {
+                            buDirty = true;
+                            return;
+                        }
+                    }
                     bu->injecting = true;
                     bu->keystrokesSent = 0;
                     bu->keystrokesTotal = 0;

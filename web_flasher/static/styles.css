@@ -310,6 +310,24 @@ button.secondary {
   background: rgba(255, 181, 122, 0.04);
 }
 
+button.danger {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: calc(100% - 40px);
+  margin: 0 20px 20px;
+  background: rgba(255, 80, 80, 0.08);
+  border-color: rgba(255, 120, 120, 0.42);
+  color: #ffaaa5;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+  transform: none;
+  filter: none;
+}
+
 .info-panel ol, .mini-box ul {
   margin: 0;
   padding: 16px 20px 14px 36px;

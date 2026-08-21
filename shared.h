@@ -69,6 +69,9 @@ const uint16_t DARK_GRAY = HALEHOUND_GUNMETAL;
 #define TFT_GRAY      0x8410
 #define SELECTED_ICON_COLOR HALEHOUND_MAGENTA
 // Routes every raw tft.fillScreen(TFT_BLACK) call through the runtime theme background
+#ifdef TFT_BLACK
+#undef TFT_BLACK
+#endif
 #define TFT_BLACK     HALEHOUND_BLACK
 
 // ═══════════════════════════════════════════════════════════════════════════

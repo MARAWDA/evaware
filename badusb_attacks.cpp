@@ -118,14 +118,13 @@ static bool buSdReady = false;
 static char buLoadStatus[56] = "";
 
 // ── Icon bar ──────────────────────────────────────────────────────────────
-#define BU_ICON_NUM 5
-static const int buIconX[BU_ICON_NUM] = {SCALE_X(70), SCALE_X(105), SCALE_X(140), SCALE_X(175), 10};
+#define BU_ICON_NUM 4
+static const int buIconX[BU_ICON_NUM] = {10, SCALE_X(70), SCALE_X(105), SCALE_X(140)};
 static const unsigned char* const buIcons[BU_ICON_NUM] = {
-    bitmap_icon_start,     // Inject / Stop
-    bitmap_icon_LEFT,      // Previous payload
-    bitmap_icon_RIGHT,     // Next payload
-    bitmap_icon_floppy2,   // Load selected SD script
-    bitmap_icon_go_back    // Back
+    bitmap_icon_go_back,
+    bitmap_icon_start,
+    bitmap_icon_LEFT,
+    bitmap_icon_RIGHT
 };
 
 static void drawBuIconBar() {
@@ -135,15 +134,6 @@ static void drawBuIconBar() {
         tft.drawBitmap(buIconX[i], ICON_BAR_Y, buIcons[i], 16, 16, HALEHOUND_MAGENTA);
     }
     tft.drawLine(0, ICON_BAR_BOTTOM, SCREEN_WIDTH, ICON_BAR_BOTTOM, HALEHOUND_HOTPINK);
-}
-
-static int getPayloadListStartY() {
-    int y = SCALE_Y(75);
-    y += 14; // Pair state
-    y += 14; // Device name
-    y += 6;  // Divider gap
-    y += 12; // "PAYLOAD:" label row
-    return y;
 }
 
 static void setLoadStatus(const char* msg) {
@@ -404,58 +394,30 @@ static void drawBuDisplay() {
     tft.print(bu->connected ? "PAIRED" : "WAITING FOR PAIRING...");
     y += 14;
 
-    tft.setTextColor(HALEHOUND_MAGENTA, HALEHOUND_BLACK);
-    tft.setCursor(10, y);
-    tft.print("Name: EVAWARE BadUSB");
-    y += 14;
-
     tft.drawLine(10, y, SCREEN_WIDTH - 10, y, HALEHOUND_HOTPINK);
     y += 6;
 
     tft.setTextColor(HALEHOUND_HOTPINK, HALEHOUND_BLACK);
     tft.setCursor(10, y);
-    tft.print("PAYLOAD:");
+    tft.print("SD SCRIPTS  /badusb");
     y += 12;
 
-    for (int i = 0; i < BU_PAYLOAD_COUNT; i++) {
+    if (buSdFileCount == 0) {
         tft.setCursor(20, y);
-        if (i == bu->selectedPayload) {
-            tft.setTextColor(HALEHOUND_BRIGHT, HALEHOUND_BLACK);
-            tft.print("> ");
-        } else {
-            tft.setTextColor(HALEHOUND_GUNMETAL, HALEHOUND_BLACK);
-            tft.print("  ");
+        tft.setTextColor(HALEHOUND_GUNMETAL, HALEHOUND_BLACK);
+        tft.print("No scripts found");
+    } else {
+        for (int i = 0; i < buSdFileCount; i++) {
+            tft.setCursor(16, y);
+            tft.setTextColor(i == buSdFileIndex ? HALEHOUND_BRIGHT : HALEHOUND_GUNMETAL,
+                             HALEHOUND_BLACK);
+            tft.print(i == buSdFileIndex ? "> " : "  ");
+            tft.print(buSdFiles[i]);
+            y += 12;
         }
-        tft.print(BU_PAYLOAD_NAMES[i]);
-        y += 12;
     }
 
-    tft.setTextColor(HALEHOUND_GUNMETAL, HALEHOUND_BLACK);
-    tft.setCursor(10, y + 2);
-    tft.print("Tap payload name to select");
-
-    y += 14;
-    tft.setTextColor(HALEHOUND_MAGENTA, HALEHOUND_BLACK);
-    tft.setCursor(10, y);
-    tft.print("SD:");
-    tft.setTextColor(HALEHOUND_GUNMETAL, HALEHOUND_BLACK);
-    tft.setCursor(36, y);
-    if (buSdFileCount > 0 && buSdFileIndex >= 0 && buSdFileIndex < buSdFileCount) {
-        tft.printf("%d/%d %s", buSdFileIndex + 1, buSdFileCount, buSdFiles[buSdFileIndex]);
-    } else {
-        tft.print("No script selected");
-    }
-
-    y += 12;
-    tft.setTextColor(HALEHOUND_GUNMETAL, HALEHOUND_BLACK);
-    tft.setCursor(10, y);
-    if (buLoadStatus[0] != '\0') {
-        tft.print(buLoadStatus);
-    } else {
-        tft.print("Use FLOPPY to load /badusb script");
-    }
-
-    y += 6;
+    y += 4;
     tft.drawLine(10, y, SCREEN_WIDTH - 10, y, HALEHOUND_HOTPINK);
     y += 6;
 
@@ -572,14 +534,13 @@ void loop() {
                 return;
             }
             // Inject / Stop
-            if (tx >= buIconX[0] - 10 && tx < buIconX[0] + 25) {
+            if (tx >= buIconX[1] - 10 && tx < buIconX[1] + 25) {
                 waitForTouchRelease();
                 delay(200);
                 if (bu->injecting) {
                     bu->injecting = false;
                 } else if (bu->connected) {
-                    if (bu->selectedPayload == BU_CUSTOM_STRING &&
-                        (bu->customLen == 0 || buSdFileCount == 0)) {
+                    if (bu->selectedPayload != BU_CUSTOM_STRING || bu->customLen == 0) {
                         if (!loadSelectedScriptFromSd() || bu->customLen == 0) {
                             buDirty = true;
                             return;
@@ -594,53 +555,40 @@ void loop() {
                 }
                 return;
             }
-            // Previous payload
-            if (tx >= buIconX[1] - 10 && tx < buIconX[1] + 25) {
-                waitForTouchRelease();
-                delay(200);
-                if (bu->selectedPayload == BU_CUSTOM_STRING && buSdFileCount > 0) {
-                    buSdFileIndex = (buSdFileIndex - 1 + buSdFileCount) % buSdFileCount;
-                    setLoadStatus("Selected SD script");
-                } else {
-                    bu->selectedPayload = (bu->selectedPayload - 1 + BU_PAYLOAD_COUNT) % BU_PAYLOAD_COUNT;
-                }
-                buDirty = true;
-                return;
-            }
-            // Next payload
+            // Previous SD script
             if (tx >= buIconX[2] - 10 && tx < buIconX[2] + 25) {
                 waitForTouchRelease();
                 delay(200);
-                if (bu->selectedPayload == BU_CUSTOM_STRING && buSdFileCount > 0) {
-                    buSdFileIndex = (buSdFileIndex + 1) % buSdFileCount;
-                    setLoadStatus("Selected SD script");
-                } else {
-                    bu->selectedPayload = (bu->selectedPayload + 1) % BU_PAYLOAD_COUNT;
+                if (buSdFileCount > 0) {
+                    buSdFileIndex = (buSdFileIndex - 1 + buSdFileCount) % buSdFileCount;
+                    loadSelectedScriptFromSd();
                 }
                 buDirty = true;
                 return;
             }
-            // Load selected SD script
+            // Next SD script
             if (tx >= buIconX[3] - 10 && tx < buIconX[3] + 25) {
                 waitForTouchRelease();
                 delay(200);
-                if (loadSelectedScriptFromSd()) {
-                    setLoadStatus("Loaded to Custom Text");
+                if (buSdFileCount > 0) {
+                    buSdFileIndex = (buSdFileIndex + 1) % buSdFileCount;
+                    loadSelectedScriptFromSd();
                 }
                 buDirty = true;
                 return;
             }
         }
 
-        // Tap-to-select payload from list body
-        int listY = getPayloadListStartY();
-        int listH = BU_PAYLOAD_COUNT * 12;
-        if (tx >= 10 && tx <= SCREEN_WIDTH - 10 && ty >= listY - 2 && ty < listY + listH) {
+        // Tap a file row to select and load it.
+        int listY = SCALE_Y(75) + 14 + 6 + 12;
+        if (tx >= 10 && tx <= SCREEN_WIDTH - 10 && ty >= listY - 2 &&
+            ty < listY + (buSdFileCount * 12)) {
             int idx = (ty - listY) / 12;
-            if (idx >= 0 && idx < BU_PAYLOAD_COUNT && idx != bu->selectedPayload) {
+            if (idx >= 0 && idx < buSdFileCount && idx != buSdFileIndex) {
                 waitForTouchRelease();
                 delay(150);
-                bu->selectedPayload = idx;
+                buSdFileIndex = idx;
+                loadSelectedScriptFromSd();
                 buDirty = true;
                 return;
             }

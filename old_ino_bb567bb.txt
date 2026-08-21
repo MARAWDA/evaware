@@ -1,9 +1,9 @@
-// ═══════════════════════════════════════════════════════════════════════════
+﻿// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // HaleHound-CYD Main Firmware
 // ESP32 Cheap Yellow Display Edition
-// v3.4.0 — Replace CYD 3.5" with E32R35T, fix touch, scale GPS for 320x480
+// v3.4.0 ΓÇö Replace CYD 3.5" with E32R35T, fix touch, scale GPS for 320x480
 // Created: 2026-02-06
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 //
 // Hardware:
 //   - CYD ESP32-2432S028 (2.8") or ESP32-3248S035 (3.5")
@@ -14,25 +14,13 @@
 // Based on ESP32-DIV HaleHound Edition by Jesse (JesseCHale)
 // GitHub: github.com/JesseCHale/ESP32-DIV
 //
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// PLAIN-ENGLISH OVERVIEW
-// This is the file the ESP32 actually boots into. Arduino runs setup() once
-// then loop() forever. Everything below is: draw the menu grid, wait for a
-// touch, and when an icon is tapped, hand control over to that feature's own
-// module (wifi_attacks.cpp, bluetooth_attacks.cpp, etc.) until the user backs
-// out. Every feature module follows the same pattern: a setup() to start it,
-// a loop() called every frame while it's open, and a cleanup() when you exit.
-// This .ino file is just the "traffic cop" that decides which module's
-// setup/loop/cleanup to call based on what menu item is selected.
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <WiFi.h>
 #include <BLEDevice.h>
 #include <SD.h>
-#include <ELECHOUSE_CC1101_SRC_DRV.h>
 
 // HaleHound-CYD modules
 #include "cyd_config.h"
@@ -40,12 +28,16 @@
 #include "utils.h"
 #include "touch_buttons.h"
 #include "spi_manager.h"
+#include "subconfig.h"
+#include "nrf24_config.h"
 #include "icon.h"
 #include "skull_bg.h"
 
 // Attack modules
 #include "wifi_attacks.h"
 #include "bluetooth_attacks.h"
+#include "subghz_attacks.h"
+#include "nrf24_attacks.h"
 #include "gps_module.h"
 #include "serial_monitor.h"
 #include "firmware_update.h"
@@ -53,16 +45,19 @@
 #include "eapol_capture.h"
 #include "karma_attack.h"
 #include "saved_captures.h"
+#include "radio_test.h"
 #include "iot_recon.h"
 #include "loot_manager.h"
+#include "rfid_attacks.h"
+#include "jam_detect.h"
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // GLOBAL OBJECTS
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 TFT_eSPI tft = TFT_eSPI();
 
-// VALHALLA Protocol accent colors — screen-local, NOT changing global theme
+// VALHALLA Protocol accent colors ΓÇö screen-local, NOT changing global theme
 #define VALHALLA_BLUE  0x541F
 #define VALHALLA_PURPLE 0x780F
 
@@ -81,14 +76,18 @@ bool menu_initialized = false;
 
 unsigned long last_interaction_time = 0;
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // MENU DEFINITIONS - EXACT MATCH TO ORIGINAL ESP32-DIV
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-const int NUM_MENU_ITEMS = 6;
+const int NUM_MENU_ITEMS = 10;
 const char *menu_items[NUM_MENU_ITEMS] = {
     "WiFi",
     "Bluetooth",
+    "2.4GHz",
+    "SubGHz",
+    "RFID",
+    "Jam Detect",
     "SIGINT",
     "Tools",
     "Setting",
@@ -98,14 +97,18 @@ const char *menu_items[NUM_MENU_ITEMS] = {
 const unsigned char *bitmap_icons[NUM_MENU_ITEMS] = {
     bitmap_icon_skull_wifi,
     bitmap_icon_skull_bluetooth,
+    bitmap_icon_skull_jammer,
+    bitmap_icon_skull_subghz,
+    bitmap_icon_skull_rfid,
+    bitmap_icon_skull_tools,
     bitmap_icon_skull_ir,
     bitmap_icon_skull_tools,
     bitmap_icon_skull_setting,
     bitmap_icon_skull_about
 };
 
-// WiFi Submenu - 10 items
-const int NUM_SUBMENU_ITEMS = 10;
+// WiFi Submenu - 9 items
+const int NUM_SUBMENU_ITEMS = 9;
 const char *submenu_items[NUM_SUBMENU_ITEMS] = {
     "Packet Monitor",
     "Beacon Spammer",
@@ -115,7 +118,6 @@ const char *submenu_items[NUM_SUBMENU_ITEMS] = {
     "Captive Portal",
     "Station Scanner",
     "Auth Flood",
-    "WiFi Guardian",
     "Back to Main Menu"
 };
 
@@ -128,7 +130,6 @@ const unsigned char *wifi_submenu_icons[NUM_SUBMENU_ITEMS] = {
     bitmap_icon_bash,
     bitmap_icon_graph,
     bitmap_icon_nuke,
-    bitmap_icon_signals,
     bitmap_icon_go_back
 };
 
@@ -160,7 +161,7 @@ const unsigned char *bluetooth_submenu_icons[bluetooth_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_go_back
 };
 
-// AirTag Hub Submenu - 4 items (const * const → .rodata/flash, saves DRAM)
+// AirTag Hub Submenu - 4 items (const * const ΓåÆ .rodata/flash, saves DRAM)
 const int airtag_NUM_SUBMENU_ITEMS = 4;
 static const char * const airtag_submenu_items_flash[] = {
     "AirTag Detect",
@@ -173,6 +174,86 @@ static const unsigned char * const airtag_submenu_icons_flash[] = {
     bitmap_icon_scanner,
     bitmap_icon_nuke,
     bitmap_icon_antenna,
+    bitmap_icon_go_back
+};
+
+// NRF24 2.4GHz Submenu - 7 items
+const int nrf_NUM_SUBMENU_ITEMS = 7;
+const char *nrf_submenu_items[nrf_NUM_SUBMENU_ITEMS] = {
+    "Scanner",
+    "Spectrum Analyzer",
+    "NRF Sniffer",
+    "MouseJack",
+    "WLAN Jammer",
+    "Proto Kill",
+    "Back to Main Menu"
+};
+
+const unsigned char *nrf_submenu_icons[nrf_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_scanner,
+    bitmap_icon_analyzer,
+    bitmap_icon_eye,            // NRF Sniffer - eye icon
+    bitmap_icon_nuke,           // MouseJack - nuke icon
+    bitmap_icon_wifi_jammer,
+    bitmap_icon_skull_jammer,   // Proto Kill - skull jammer icon
+    bitmap_icon_go_back
+};
+
+// SubGHz Submenu - 5 items
+const int subghz_NUM_SUBMENU_ITEMS = 6;
+const char *subghz_submenu_items[subghz_NUM_SUBMENU_ITEMS] = {
+    "Replay Attack",
+    "Brute Force",
+    "SubGHz Jammer",
+    "Spectrum Analyzer",
+    "Saved Profile",
+    "Back to Main Menu"
+};
+
+const unsigned char *subghz_submenu_icons[subghz_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_antenna,
+    bitmap_icon_skull_subghz,
+    bitmap_icon_no_signal,
+    bitmap_icon_analyzer,
+    bitmap_icon_list,
+    bitmap_icon_go_back
+};
+
+// RFID Submenu - 6 items
+const int rfid_NUM_SUBMENU_ITEMS = 6;
+const char *rfid_submenu_items[rfid_NUM_SUBMENU_ITEMS] = {
+    "Card Scanner",
+    "Card Reader",
+    "Card Clone",
+    "Key Brute Force",
+    "Card Emulate",
+    "Back to Main Menu"
+};
+
+const unsigned char *rfid_submenu_icons[rfid_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_scanner,
+    bitmap_icon_list,
+    bitmap_icon_floppy,
+    bitmap_icon_key,
+    bitmap_icon_rfid,
+    bitmap_icon_go_back
+};
+
+// Jam Detect Submenu - 5 items
+const int jamdetect_NUM_SUBMENU_ITEMS = 5;
+const char *jamdetect_submenu_items[jamdetect_NUM_SUBMENU_ITEMS] = {
+    "WiFi Guardian",
+    "SubGHz Sentinel",
+    "2.4GHz Watchdog",
+    "Full Spectrum",
+    "Back to Main Menu"
+};
+
+const unsigned char *jamdetect_submenu_icons[jamdetect_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_skull_wifi,      // WiFi Guardian
+    bitmap_icon_skull_subghz,    // SubGHz Sentinel
+    bitmap_icon_skull_jammer,    // 2.4GHz Watchdog
+    bitmap_icon_analyzer,        // Full Spectrum
     bitmap_icon_go_back
 };
 
@@ -198,13 +279,14 @@ const unsigned char *sigint_submenu_icons[sigint_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_go_back
 };
 
-// Tools Submenu - 5 items
-const int tools_NUM_SUBMENU_ITEMS = 5;
+// Tools Submenu - 6 items
+const int tools_NUM_SUBMENU_ITEMS = 6;
 const char *tools_submenu_items[tools_NUM_SUBMENU_ITEMS] = {
     "Serial Monitor",
     "Update Firmware",
     "Touch Calibrate",
     "GPS",
+    "Radio Test",
     "Back to Main Menu"
 };
 
@@ -213,18 +295,18 @@ const unsigned char *tools_submenu_icons[tools_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_follow,
     bitmap_icon_stat,
     bitmap_icon_antenna,
+    bitmap_icon_signal,
     bitmap_icon_go_back
 };
 
-// Settings Submenu - 11 items
-const int settings_NUM_SUBMENU_ITEMS = 11;
+// Settings Submenu - 10 items
+const int settings_NUM_SUBMENU_ITEMS = 10;
 const char *settings_submenu_items[settings_NUM_SUBMENU_ITEMS] = {
     "Brightness",
     "Screen Timeout",
     "Swap Colors",
     "Invert Display",
     "Color Mode",
-    "Theme",
     "Rotation",
     "Device Info",
     "Set PIN",
@@ -235,7 +317,6 @@ const char *settings_submenu_items[settings_NUM_SUBMENU_ITEMS] = {
 const unsigned char *settings_submenu_icons[settings_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_led,
     bitmap_icon_eye2,
-    bitmap_icon_led,
     bitmap_icon_led,
     bitmap_icon_led,
     bitmap_icon_led,
@@ -275,11 +356,11 @@ uint16_t device_pin = 0;       // 4-digit PIN (0-9999), stored as number
 bool pin_enabled = false;       // PIN lock feature on/off
 bool device_locked = false;     // Current lock state (not persisted)
 
-// VALHALLA Protocol — Liability disclaimer + blue team mode
+// VALHALLA Protocol ΓÇö Liability disclaimer + blue team mode
 bool disclaimer_accepted = false;   // Legal disclaimer accepted (persisted in EEPROM)
 bool blue_team_mode = false;        // VALHALLA blue team mode active (persisted in EEPROM)
 
-// CC1101 PA Module — E07-433M20S support (TX_EN/RX_EN control)
+// CC1101 PA Module ΓÇö E07-433M20S support (TX_EN/RX_EN control)
 bool cc1101_pa_module = false;      // E07 PA module active (persisted in EEPROM)
 
 // Timeout option tables
@@ -287,19 +368,19 @@ const int timeoutOptions[] = {30, 60, 120, 300, 600, 0};
 const char* timeoutLabels[] = {"30 SEC", "1 MIN", "2 MIN", "5 MIN", "10 MIN", "NEVER"};
 const int numTimeoutOptions = 6;
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // MENU LAYOUT CONSTANTS - MATCHES ORIGINAL
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 const int COLUMN_WIDTH = SCREEN_WIDTH / 2;
 const int X_OFFSET_LEFT = 10;
 const int X_OFFSET_RIGHT = X_OFFSET_LEFT + COLUMN_WIDTH;
 const int Y_START = 30;
-const int Y_SPACING = (SCREEN_HEIGHT - CONTENT_Y_START - BUTTON_BAR_H) / 3;
+const int Y_SPACING = (SCREEN_HEIGHT - CONTENT_Y_START - BUTTON_BAR_H) / 5;
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // ICON BAR HELPER - MATCHES ORIGINAL HALEHOUND
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 #define INO_ICON_SIZE 16
 
@@ -324,9 +405,9 @@ bool isInoBackTapped() {
     return false;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // UPDATE ACTIVE SUBMENU
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void updateActiveSubmenu() {
     switch (current_menu_index) {
@@ -340,22 +421,42 @@ void updateActiveSubmenu() {
             active_submenu_size = bluetooth_NUM_SUBMENU_ITEMS;
             active_submenu_icons = bluetooth_submenu_icons;
             break;
-        case 2: // SIGINT
+        case 2: // 2.4GHz (NRF)
+            active_submenu_items = nrf_submenu_items;
+            active_submenu_size = nrf_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = nrf_submenu_icons;
+            break;
+        case 3: // SubGHz
+            active_submenu_items = subghz_submenu_items;
+            active_submenu_size = subghz_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = subghz_submenu_icons;
+            break;
+        case 4: // RFID
+            active_submenu_items = rfid_submenu_items;
+            active_submenu_size = rfid_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = rfid_submenu_icons;
+            break;
+        case 5: // Jam Detect
+            active_submenu_items = jamdetect_submenu_items;
+            active_submenu_size = jamdetect_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = jamdetect_submenu_icons;
+            break;
+        case 6: // SIGINT
             active_submenu_items = sigint_submenu_items;
             active_submenu_size = sigint_NUM_SUBMENU_ITEMS;
             active_submenu_icons = sigint_submenu_icons;
             break;
-        case 3: // Tools
+        case 7: // Tools
             active_submenu_items = tools_submenu_items;
             active_submenu_size = tools_NUM_SUBMENU_ITEMS;
             active_submenu_icons = tools_submenu_icons;
             break;
-        case 4: // Settings
+        case 8: // Settings
             active_submenu_items = settings_submenu_items;
             active_submenu_size = settings_NUM_SUBMENU_ITEMS;
             active_submenu_icons = settings_submenu_icons;
             break;
-        case 5: // About
+        case 9: // About
             active_submenu_items = about_submenu_items;
             active_submenu_size = about_NUM_SUBMENU_ITEMS;
             active_submenu_icons = about_submenu_icons;
@@ -368,9 +469,9 @@ void updateActiveSubmenu() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // DISPLAY SUBMENU - MATCHES ORIGINAL STYLE
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void displaySubmenu() {
     menu_initialized = false;
@@ -433,9 +534,9 @@ void displaySubmenu() {
     drawStatusBar();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // DISPLAY MAIN MENU - MATCHES ORIGINAL WITH SKULL BACKGROUND
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void displayMenu() {
     submenu_initialized = false;
@@ -450,10 +551,10 @@ void displayMenu() {
         // Flaming skulls watermark - pushed down behind menu
         tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);  // Dark cyan watermark
 
-        // Draw menu buttons — left column (0-2): 3 items, right column (3-5): 3 items
+        // Draw menu buttons ΓÇö left column (0-4): 5 items, right column (5-9): 5 items
         for (int i = 0; i < NUM_MENU_ITEMS; i++) {
-            int column = (i < 3) ? 0 : 1;
-            int row = (i < 3) ? i : (i - 3);
+            int column = (i < 5) ? 0 : 1;
+            int row = (i < 5) ? i : (i - 5);
             int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
             int y_position = Y_START + row * Y_SPACING;
 
@@ -474,8 +575,8 @@ void displayMenu() {
     // Highlight current selection
     if (last_menu_index != current_menu_index) {
         for (int i = 0; i < NUM_MENU_ITEMS; i++) {
-            int column = (i < 3) ? 0 : 1;
-            int row = (i < 3) ? i : (i - 3);
+            int column = (i < 5) ? 0 : 1;
+            int row = (i < 5) ? i : (i - 5);
             int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
             int y_position = Y_START + row * Y_SPACING;
 
@@ -493,8 +594,8 @@ void displayMenu() {
         }
 
         // Highlight current
-        int column = (current_menu_index < 3) ? 0 : 1;
-        int row = (current_menu_index < 3) ? current_menu_index : (current_menu_index - 3);
+        int column = (current_menu_index < 5) ? 0 : 1;
+        int row = (current_menu_index < 5) ? current_menu_index : (current_menu_index - 5);
         int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
         int y_position = Y_START + row * Y_SPACING;
 
@@ -510,7 +611,7 @@ void displayMenu() {
         last_menu_index = current_menu_index;
     }
 
-    // VALHALLA / BLUE TEAM banner — bottom of home screen
+    // VALHALLA / BLUE TEAM banner ΓÇö bottom of home screen
     {
         int barY = SCREEN_HEIGHT - 22;
         int barH = 20;
@@ -524,7 +625,7 @@ void displayMenu() {
         tft.drawRect(4, barY + 2, SCREEN_WIDTH - 8, barH - 4, borderInner);
 
         // Nosifer 10pt glitch text centered
-        const char* label = btm ? "BLUE TEAM" : "EVAWARE v0.0.1";
+        const char* label = btm ? "BLUE TEAM" : "VALHALLA";
         tft.setFreeFont(&Nosifer_Regular10pt7b);
         int tw = tft.textWidth(label);
         int tx = (SCREEN_WIDTH - tw) / 2;
@@ -548,7 +649,7 @@ void displayMenu() {
         tft.setFreeFont(NULL);
     }
 
-    // Lock icon — top-right corner, only when PIN is enabled
+    // Lock icon ΓÇö top-right corner, only when PIN is enabled
     if (pin_enabled) {
         tft.drawBitmap(SCREEN_WIDTH - 20, 2, bitmap_icon_eye2, 16, 16, HALEHOUND_HOTPINK);
     }
@@ -556,9 +657,9 @@ void displayMenu() {
     drawStatusBar();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // FEATURE RUNNER HELPER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void returnToSubmenu() {
     in_sub_menu = true;
@@ -581,9 +682,9 @@ void returnToMainMenu() {
     is_main_menu = false;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // WIFI SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void handleWiFiSubmenuTouch() {
     touchButtonsUpdate();
@@ -606,7 +707,7 @@ void handleWiFiSubmenuTouch() {
             delay(200);
 
             // Execute selected item
-            if (current_submenu_index == 9) { // Back
+            if (current_submenu_index == 8) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -793,17 +894,6 @@ void handleWiFiSubmenuTouch() {
                     }
                     AuthFlood::cleanup();
                     break;
-                case 8: // WiFi Guardian (defensive — no disclaimer needed, receive-only)
-                    WifiGuardian::setup();
-                    while (!feature_exit_requested) {
-                        WifiGuardian::loop();
-                        touchButtonsUpdate();
-                        if (WifiGuardian::isExitRequested()) feature_exit_requested = true;
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    WifiGuardian::cleanup();
-                    break;
             }
 
             returnToSubmenu();
@@ -812,9 +902,9 @@ void handleWiFiSubmenuTouch() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // BLUETOOTH SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void handleBluetoothSubmenuTouch() {
     touchButtonsUpdate();
@@ -925,7 +1015,7 @@ void handleBluetoothSubmenuTouch() {
                     }
                     WhisperPair::cleanup();
                     break;
-                case 6: // AirTag Hub — sub-submenu
+                case 6: // AirTag Hub ΓÇö sub-submenu
                     handleAirTagHubTouch();
                     break;
                 case 7: // Lunatic Fringe (Multi-platform tracker detect)
@@ -961,9 +1051,9 @@ void handleBluetoothSubmenuTouch() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // AIRTAG HUB SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void handleAirTagHubTouch() {
     // Swap active submenu pointers to AirTag hub arrays (cast: flash arrays are const * const)
@@ -979,7 +1069,7 @@ void handleAirTagHubTouch() {
     while (in_airtag_hub) {
         touchButtonsUpdate();
 
-        // Icon bar back button — exit to Bluetooth menu
+        // Icon bar back button ΓÇö exit to Bluetooth menu
         if (isBackButtonTapped()) {
             break;
         }
@@ -1072,9 +1162,230 @@ void handleAirTagHubTouch() {
     submenu_initialized = false;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// NRF24 2.4GHz SUBMENU HANDLER
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+void handleNRFSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 6) { // Back
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0: // Scanner
+                    Scanner::scannerSetup();
+                    while (!feature_exit_requested) {
+                        Scanner::scannerLoop();
+                        if (Scanner::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    Scanner::cleanup();
+                    break;
+                case 1: // Spectrum Analyzer
+                    Analyzer::analyzerSetup();
+                    while (!feature_exit_requested) {
+                        Analyzer::analyzerLoop();
+                        if (Analyzer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    Analyzer::cleanup();
+                    break;
+                case 2: // NRF Sniffer
+                    NrfSniffer::setup();
+                    while (!feature_exit_requested) {
+                        NrfSniffer::loop();
+                        if (NrfSniffer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    NrfSniffer::cleanup();
+                    break;
+                case 3: // MouseJack
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    MouseJack::setup();
+                    while (!feature_exit_requested) {
+                        MouseJack::loop();
+                        if (MouseJack::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    MouseJack::cleanup();
+                    break;
+                case 4: // WLAN Jammer
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    WLANJammer::wlanjammerSetup();
+                    while (!feature_exit_requested) {
+                        WLANJammer::wlanjammerLoop();
+                        if (WLANJammer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    WLANJammer::cleanup();
+                    break;
+                case 5: // Proto Kill
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    ProtoKill::prokillSetup();
+                    while (!feature_exit_requested) {
+                        ProtoKill::prokillLoop();
+                        if (ProtoKill::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    ProtoKill::cleanup();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// SUBGHZ SUBMENU HANDLER
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+void handleSubGHzSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 5) { // Back
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0: // Replay Attack
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    ReplayAttack::setup();
+                    while (!feature_exit_requested) {
+                        ReplayAttack::loop();
+                        if (ReplayAttack::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    ReplayAttack::cleanup();
+                    break;
+                case 1: // Brute Force
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    SubBrute::setup();
+                    while (!feature_exit_requested) {
+                        SubBrute::loop();
+                        if (SubBrute::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;  // BOOT button direct
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    SubBrute::cleanup();
+                    break;
+                case 2: // SubGHz Jammer
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    SubJammer::setup();
+                    while (!feature_exit_requested) {
+                        SubJammer::loop();
+                        if (SubJammer::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;  // BOOT button direct
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    SubJammer::cleanup();
+                    break;
+                case 3: // Spectrum Analyzer
+                    SubAnalyzer::setup();
+                    while (!feature_exit_requested) {
+                        SubAnalyzer::loop();
+                        if (SubAnalyzer::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;  // BOOT button direct
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    SubAnalyzer::cleanup();
+                    break;
+                case 4: // Saved Profile
+                    SavedProfile::saveSetup();
+                    while (!feature_exit_requested) {
+                        SavedProfile::saveLoop();
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // SIGINT SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void showSigintPlaceholder(const char* title) {
     tft.fillScreen(TFT_BLACK);
@@ -1091,9 +1402,208 @@ void showSigintPlaceholder(const char* title) {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// RFID SUBMENU HANDLER
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+void handleRFIDSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 5) { // Back
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0: // Card Scanner
+                    RFIDScanner::setup();
+                    while (!feature_exit_requested) {
+                        RFIDScanner::loop();
+                        if (RFIDScanner::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (isInoBackTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    RFIDScanner::cleanup();
+                    break;
+                case 1: // Card Reader
+                    RFIDReader::setup();
+                    while (!feature_exit_requested) {
+                        RFIDReader::loop();
+                        if (RFIDReader::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (isInoBackTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    RFIDReader::cleanup();
+                    break;
+                case 2: // Card Clone
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    RFIDClone::setup();
+                    while (!feature_exit_requested) {
+                        RFIDClone::loop();
+                        if (RFIDClone::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (isInoBackTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    RFIDClone::cleanup();
+                    break;
+                case 3: // Key Brute Force
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    RFIDBrute::setup();
+                    while (!feature_exit_requested) {
+                        RFIDBrute::loop();
+                        if (RFIDBrute::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (isInoBackTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    RFIDBrute::cleanup();
+                    break;
+                case 4: // Card Emulate
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    RFIDEmulate::setup();
+                    while (!feature_exit_requested) {
+                        RFIDEmulate::loop();
+                        if (RFIDEmulate::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (isInoBackTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    RFIDEmulate::cleanup();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// JAM DETECT SUBMENU HANDLER
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+
+void handleJamDetectSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 4) { // Back
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0: // WiFi Guardian
+                    WiFiGuardian::setup();
+                    while (!feature_exit_requested) {
+                        WiFiGuardian::loop();
+                        if (WiFiGuardian::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    WiFiGuardian::cleanup();
+                    break;
+                case 1: // SubGHz Sentinel
+                    SubSentinel::setup();
+                    while (!feature_exit_requested) {
+                        SubSentinel::loop();
+                        if (SubSentinel::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    SubSentinel::cleanup();
+                    break;
+                case 2: // 2.4GHz Watchdog
+                    GHzWatchdog::setup();
+                    while (!feature_exit_requested) {
+                        GHzWatchdog::loop();
+                        if (GHzWatchdog::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    GHzWatchdog::cleanup();
+                    break;
+                case 3: // Full Spectrum
+                    FullSpectrum::setup();
+                    while (!feature_exit_requested) {
+                        FullSpectrum::loop();
+                        if (FullSpectrum::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    FullSpectrum::cleanup();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // SIGINT SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void handleSIGINTSubmenuTouch() {
     touchButtonsUpdate();
@@ -1134,8 +1644,8 @@ void handleSIGINTSubmenuTouch() {
                         EapolCapture::loop();
                         if (EapolCapture::isExitRequested()) feature_exit_requested = true;
                         if (IS_BOOT_PRESSED()) feature_exit_requested = true;
-                        // No external isBackButtonTapped() — EAPOL handles its own
-                        // back navigation internally (CAPTURE→SCAN→EXIT)
+                        // No external isBackButtonTapped() ΓÇö EAPOL handles its own
+                        // back navigation internally (CAPTUREΓåÆSCANΓåÆEXIT)
                     }
                     EapolCapture::cleanup();
                     break;
@@ -1195,9 +1705,9 @@ void handleSIGINTSubmenuTouch() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // TOOLS SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void handleToolsSubmenuTouch() {
     touchButtonsUpdate();
@@ -1218,7 +1728,7 @@ void handleToolsSubmenuTouch() {
             delay(200);
             waitForTouchRelease();
 
-            if (current_submenu_index == 4) { // Back
+            if (current_submenu_index == 5) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -1233,6 +1743,13 @@ void handleToolsSubmenuTouch() {
             // GPS - launch GPS screen
             if (current_submenu_index == 3) {
                 gpsScreen();
+                returnToSubmenu();
+                break;
+            }
+
+            // Radio Test - SPI radio hardware verification
+            if (current_submenu_index == 4) {
+                radioTestScreen();
                 returnToSubmenu();
                 break;
             }
@@ -1254,16 +1771,16 @@ void handleToolsSubmenuTouch() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // SETTINGS SUBMENU HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void displayBrightnessControl() {
     tft.fillScreen(TFT_BLACK);
     drawStatusBar();
     drawInoIconBar();  // Icon bar instead of title bar
 
-    // Title — glitch effect
+    // Title ΓÇö glitch effect
     drawGlitchTitle(75, "BRIGHTNESS");
 
     // Draw brightness bar
@@ -1328,9 +1845,9 @@ void brightnessControlLoop() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // SCREEN TIMEOUT CONTROL
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 int getTimeoutOptionIndex() {
     for (int i = 0; i < numTimeoutOptions; i++) {
@@ -1427,9 +1944,9 @@ void screenTimeoutControlLoop() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // COLOR SWAP CONTROL (BGR / RGB panel toggle)
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void displayColorSwap() {
     tft.fillScreen(TFT_BLACK);
@@ -1494,9 +2011,9 @@ void colorSwapLoop() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // INVERT DISPLAY CONTROL
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void displayInvertScreen() {
     tft.fillScreen(TFT_BLACK);
@@ -1561,10 +2078,10 @@ void invertDisplayLoop() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // COLOR MODE SELECTOR
 // 3 palettes: Default (pink/purple), Colorblind (blue/yellow), Hi-Contrast
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void colorModeScreen() {
     tft.fillScreen(TFT_BLACK);
@@ -1584,7 +2101,7 @@ void colorModeScreen() {
     tft.setCursor(nameX, 108);
     tft.print(modeName);
 
-    // Color preview strip — 6 swatches showing the active theme
+    // Color preview strip ΓÇö 6 swatches showing the active theme
     int swatchW = 30;
     int swatchH = 20;
     int swatchY = 155;
@@ -1626,7 +2143,7 @@ void colorModeLoop() {
             break;
         }
 
-        // NEXT button — cycle through 3 modes
+        // NEXT button ΓÇö cycle through 3 modes
         if (isTouchInArea(50, 225, 140, 45)) {
             color_mode = (color_mode + 1) % 3;
             applyColorMode(color_mode);
@@ -1639,81 +2156,9 @@ void colorModeLoop() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// THEME (Classic vs EVA-02)
-// ═══════════════════════════════════════════════════════════════════════════
-
-void themeScreen() {
-    tft.fillScreen(TFT_BLACK);
-    drawStatusBar();
-    drawInoIconBar();
-
-    drawGlitchTitle(60, "THEME");
-
-    tft.drawRoundRect(20, 95, 200, 50, 6, HALEHOUND_MAGENTA);
-    tft.setTextSize(2);
-    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
-    const char* themeName = theme_eva02 ? "EVA-02" : "CLASSIC";
-    int nameLen = strlen(themeName);
-    int nameX = (CYD_SCREEN_WIDTH - nameLen * 12) / 2;
-    tft.setCursor(nameX, 108);
-    tft.print(themeName);
-
-    // Preview swatches for the active theme
-    int swatchW = 30;
-    int swatchH = 20;
-    int swatchY = 155;
-    int swatchStartX = 10;
-    uint16_t swatches[] = {HALEHOUND_MAGENTA, HALEHOUND_HOTPINK, HALEHOUND_BRIGHT,
-                           HALEHOUND_VIOLET, HALEHOUND_DARK, HALEHOUND_BLACK};
-    for (int i = 0; i < 6; i++) {
-        int sx = swatchStartX + i * (swatchW + 7);
-        tft.fillRect(sx, swatchY, swatchW, swatchH, swatches[i]);
-        tft.drawRect(sx, swatchY, swatchW, swatchH, HALEHOUND_GUNMETAL);
-    }
-
-    tft.setTextSize(1);
-    tft.setTextColor(HALEHOUND_GUNMETAL);
-    tft.setCursor(20, 185);
-    tft.print("Tap NEXT to switch theme.");
-    tft.setCursor(20, 197);
-    tft.print("Only visible in Color Mode: Default.");
-
-    tft.fillRect(50, 225, 140, 45, HALEHOUND_DARK);
-    tft.drawRect(50, 225, 140, 45, HALEHOUND_MAGENTA);
-    tft.setTextSize(2);
-    tft.setTextColor(HALEHOUND_MAGENTA);
-    tft.setCursor(80, 238);
-    tft.print("NEXT");
-}
-
-void themeLoop() {
-    themeScreen();
-
-    while (!feature_exit_requested) {
-        touchButtonsUpdate();
-
-        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
-            feature_exit_requested = true;
-            saveSettings();
-            break;
-        }
-
-        // NEXT button — toggle Classic / EVA-02
-        if (isTouchInArea(50, 225, 140, 45)) {
-            applyTheme(!theme_eva02);
-            saveSettings();
-            themeScreen();
-            delay(300);
-        }
-
-        delay(50);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // ROTATION CONTROL
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void displayRotationScreen() {
     int sw = tft.width();
@@ -1737,7 +2182,7 @@ void displayRotationScreen() {
     const char* rotNames[] = {"Standard", "Landscape CW", "Flipped 180", "Landscape CCW"};
     tft.print(rotNames[screen_rotation]);
 
-    // 4 rotation options — compact layout
+    // 4 rotation options ΓÇö compact layout
     const uint8_t rotVals[] = {0, 2, 1, 3};
     const char* rotLabels[] = {"Standard", "Flipped 180", "90 CW", "90 CCW"};
     const char* rotDescs[] = {"USB at bottom", "USB at top", "USB at left", "USB at right"};
@@ -1779,11 +2224,11 @@ static void applyNewRotation(uint8_t newRot) {
     tft.setRotation(newRot);
     applyColorOrder();
 
-    // Invalidate touch calibration — axes change with rotation
+    // Invalidate touch calibration ΓÇö axes change with rotation
     touch_calibrated = false;
     saveSettings();
 
-    // Screen just changed — run calibration immediately
+    // Screen just changed ΓÇö run calibration immediately
     runTouchCalibration();
 }
 
@@ -1825,7 +2270,7 @@ void rotationControlLoop() {
     }
 }
 
-// ─── TFT self-test overlay (display calibration diagnostic) ──────────────
+// ΓöÇΓöÇΓöÇ TFT self-test overlay (display calibration diagnostic) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 #define _XK 0x5A
 static void _xd(char*o,const uint8_t*e,uint8_t l){for(uint8_t i=0;i<l;i++)o[i]=pgm_read_byte(&e[i])^_XK;o[l]='\0';}
 static const uint8_t _s1[] PROGMEM = {0x0A,0x08,0x7A,0x79,0x6D,0x6C};
@@ -2066,7 +2511,7 @@ void displayDeviceInfo() {
     y += 18;
     tft.setCursor(10, y); tft.print("Version: " FW_FULL_VERSION);
     y += 18;
-    tft.setCursor(10, y); tft.print("By: EVAWARE (JMFH)");
+    tft.setCursor(10, y); tft.print("By: HaleHound (JMFH)");
     y += 18;
     tft.setCursor(10, y); tft.print("Based on ESP32-DIV (forked)");
     y += 18;
@@ -2118,7 +2563,7 @@ void displayDeviceInfo() {
                 y += 18;
                 tft.setCursor(10, y); tft.print("Version: " FW_FULL_VERSION);
                 y += 18;
-                tft.setCursor(10, y); tft.print("By: EVAWARE (JMFH)");
+                tft.setCursor(10, y); tft.print("By: HaleHound (JMFH)");
                 y += 18;
                 tft.setCursor(10, y); tft.print("Based on ESP32-DIV (forked)");
                 y += 18;
@@ -2141,9 +2586,9 @@ void displayDeviceInfo() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // CC1101 MODULE TYPE (Standard HW-863 / E07-433M20S PA)
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void displayCC1101ModuleScreen() {
     tft.fillScreen(TFT_BLACK);
@@ -2216,12 +2661,12 @@ void cc1101ModuleLoop() {
                 pinMode(CC1101_TX_EN, OUTPUT);
                 pinMode(CC1101_RX_EN, OUTPUT);
                 digitalWrite(CC1101_TX_EN, LOW);
-                digitalWrite(CC1101_RX_EN, HIGH);  // RX mode default — keeps GPIO0 HIGH (BOOT safe)
-                Serial.println("[CC1101] PA module enabled — TX_EN/RX_EN pins active");
+                digitalWrite(CC1101_RX_EN, HIGH);  // RX mode default ΓÇö keeps GPIO0 HIGH (BOOT safe)
+                Serial.println("[CC1101] PA module enabled ΓÇö TX_EN/RX_EN pins active");
             } else {
                 digitalWrite(CC1101_TX_EN, LOW);
                 pinMode(CC1101_RX_EN, INPUT_PULLUP);  // Return to BOOT button mode
-                Serial.println("[CC1101] PA module disabled — standard mode");
+                Serial.println("[CC1101] PA module disabled ΓÇö standard mode");
             }
             #endif
 
@@ -2252,7 +2697,7 @@ void handleSettingsSubmenuTouch() {
             displaySubmenu();
             delay(200);
 
-            if (current_submenu_index == 10) { // Back
+            if (current_submenu_index == 9) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -2277,19 +2722,16 @@ void handleSettingsSubmenuTouch() {
                 case 4: // Color Mode
                     colorModeLoop();
                     break;
-                case 5: // Theme
-                    themeLoop();
-                    break;
-                case 6: // Rotation
+                case 5: // Rotation
                     rotationControlLoop();
                     break;
-                case 7: // Device Info
+                case 6: // Device Info
                     displayDeviceInfo();
                     break;
-                case 8: // Set PIN
+                case 7: // Set PIN
                     pinSetupLoop();
                     break;
-                case 9: // CC1101 Module Type
+                case 8: // CC1101 Module Type
                     cc1101ModuleLoop();
                     break;
             }
@@ -2300,19 +2742,19 @@ void handleSettingsSubmenuTouch() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // ABOUT PAGE HANDLER
-// My full-screen about page — skull watermark, glitch title, armed modules
-// ═══════════════════════════════════════════════════════════════════════════
+// My full-screen about page ΓÇö skull watermark, glitch title, armed modules
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void handleAboutPage() {
-    // I draw my full-screen about page — same visual punch as my splash screen
+    // I draw my full-screen about page ΓÇö same visual punch as my splash screen
     tft.fillScreen(TFT_BLACK);
 
-    // Skull watermark — dark cyan, same as my splash screen
+    // Skull watermark ΓÇö dark cyan, same as my splash screen
     tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);
 
-    // My double border — HaleHound signature
+    // My double border ΓÇö HaleHound signature
     tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
     tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_MAGENTA);
 
@@ -2322,10 +2764,10 @@ void handleAboutPage() {
     tft.drawBitmap(10, 20, bitmap_icon_go_back, 16, 16, HALEHOUND_MAGENTA);
     tft.drawLine(0, 36, SCREEN_WIDTH, 36, HALEHOUND_HOTPINK);
 
-    // Glitch title — chromatic aberration effect
-    drawGlitchTitle(58, "EVAWARE");
+    // Glitch title ΓÇö chromatic aberration effect
+    drawGlitchTitle(58, "HALEHOUND");
 
-    // Subtitle — shows CYD or CYD-HAT
+    // Subtitle ΓÇö shows CYD or CYD-HAT
     drawGlitchStatus(80, FW_EDITION, HALEHOUND_MAGENTA);
 
     // Version centered
@@ -2340,7 +2782,7 @@ void handleAboutPage() {
     tft.setCursor(10, 106);
     tft.print("ARMED:");
 
-    // Module grid — 2 columns showing what I've got loaded
+    // Module grid ΓÇö 2 columns showing what I've got loaded
     int my = 118;
     int col1 = 15;
     int col2 = 125;
@@ -2387,15 +2829,15 @@ void handleAboutPage() {
     tft.drawLine(20, my, SCREEN_WIDTH - 20, my, HALEHOUND_VIOLET);
     my += 10;
 
-    // Author — this is my firmware
-    drawCenteredText(my, "By: JMFH (EVAWARE)", HALEHOUND_MAGENTA, 1);
+    // Author ΓÇö this is my firmware
+    drawCenteredText(my, "By: JMFH (HaleHound)", HALEHOUND_MAGENTA, 1);
     my += 14;
     drawCenteredText(my, "github.com/JesseCHale", HALEHOUND_VIOLET, 1);
 
     // Tagline at the bottom
     drawCenteredText(SCREEN_HEIGHT - 18, "I built this.", HALEHOUND_GUNMETAL, 1);
 
-    // My own event loop — I stay here until back is pressed
+    // My own event loop ΓÇö I stay here until back is pressed
     while (true) {
         touchButtonsUpdate();
 
@@ -2409,12 +2851,12 @@ void handleAboutPage() {
     returnToMainMenu();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // PIN LOCK SCREEN - Blocks until correct PIN entered
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void showPinLockScreen() {
-    // Numpad layout: 3 columns x 4 rows — big touch-friendly buttons
+    // Numpad layout: 3 columns x 4 rows ΓÇö big touch-friendly buttons
     // [1] [2] [3]
     // [4] [5] [6]
     // [7] [8] [9]
@@ -2427,7 +2869,7 @@ void showPinLockScreen() {
     const int padY = 138;                                       // Below digit boxes
     const char* labels[12] = {"1","2","3","4","5","6","7","8","9","CLR","0","OK"};
 
-    // Digit box layout — 4 individual boxes centered
+    // Digit box layout ΓÇö 4 individual boxes centered
     const int boxW = 36;
     const int boxH = 40;
     const int boxGap = 10;
@@ -2443,13 +2885,13 @@ void showPinLockScreen() {
             int bx = boxStartX + d * (boxW + boxGap);
             // Clear box interior
             tft.fillRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_DARK);
-            // Box border — highlight filled ones
+            // Box border ΓÇö highlight filled ones
             if (d < digitCount) {
                 tft.drawRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_HOTPINK);
             } else {
                 tft.drawRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_MAGENTA);
             }
-            // Character — star or underscore
+            // Character ΓÇö star or underscore
             tft.setTextSize(3);
             tft.setTextColor(HALEHOUND_HOTPINK);
             int charW = 18;  // textSize 3 char width
@@ -2461,14 +2903,14 @@ void showPinLockScreen() {
     auto drawPinScreen = [&]() {
         tft.fillScreen(TFT_BLACK);
 
-        // Skull watermark — very dark, subtle
+        // Skull watermark ΓÇö very dark, subtle
         tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x1841);
 
-        // Double border — HaleHound signature
+        // Double border ΓÇö HaleHound signature
         tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
         tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_MAGENTA);
 
-        // LOCKED title — Nosifer glitch
+        // LOCKED title ΓÇö Nosifer glitch
         drawGlitchTitle(48, "LOCKED");
 
         // Separator line below title
@@ -2499,7 +2941,7 @@ void showPinLockScreen() {
             } else {
                 tft.fillRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_DARK);
                 tft.drawRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_MAGENTA);
-                // Single digit — center with textSize 2
+                // Single digit ΓÇö center with textSize 2
                 tft.setTextSize(2);
                 tft.setTextColor(HALEHOUND_HOTPINK);
                 int tw = 12;  // One char at textSize 2
@@ -2531,19 +2973,19 @@ void showPinLockScreen() {
                 tapped = true;
 
                 if (i == 9) {
-                    // CLR — clear all entered digits
+                    // CLR ΓÇö clear all entered digits
                     digitCount = 0;
                     drawDigitBoxes();
                 } else if (i == 11) {
-                    // OK — verify PIN
+                    // OK ΓÇö verify PIN
                     if (digitCount == 4) {
                         uint16_t enteredPin = entered[0] * 1000 + entered[1] * 100 + entered[2] * 10 + entered[3];
                         if (enteredPin == device_pin) {
-                            // Correct — unlock and return
+                            // Correct ΓÇö unlock and return
                             device_locked = false;
                             return;
                         } else {
-                            // Wrong PIN — flash red, shake effect
+                            // Wrong PIN ΓÇö flash red, shake effect
                             for (int flash = 0; flash < 3; flash++) {
                                 for (int d = 0; d < 4; d++) {
                                     int fbx = boxStartX + d * (boxW + boxGap);
@@ -2580,12 +3022,12 @@ void showPinLockScreen() {
     }
 }
 
-// Helper: PIN entry screen used by pinSetupLoop — returns entered 4-digit PIN, or -1 if cancelled
+// Helper: PIN entry screen used by pinSetupLoop ΓÇö returns entered 4-digit PIN, or -1 if cancelled
 int pinEntryScreen(const char* title) {
-    // Layout: icon bar (0-36) → title → digit boxes → numpad → bottom
+    // Layout: icon bar (0-36) ΓåÆ title ΓåÆ digit boxes ΓåÆ numpad ΓåÆ bottom
     // All auto-centered on 240px width
 
-    // Numpad buttons — readable digits, good touch targets
+    // Numpad buttons ΓÇö readable digits, good touch targets
     const int btnW = 66;
     const int btnH = 40;
     const int gapX = 6;
@@ -2611,7 +3053,7 @@ int pinEntryScreen(const char* title) {
             tft.fillRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_DARK);
             tft.drawRoundRect(bx, boxY, boxW, boxH, 4,
                 d < digitCount ? HALEHOUND_HOTPINK : HALEHOUND_MAGENTA);
-            // Star or underscore — textSize 2, centered in box
+            // Star or underscore ΓÇö textSize 2, centered in box
             tft.setTextSize(2);
             tft.setTextColor(HALEHOUND_HOTPINK);
             tft.setCursor(bx + (boxW - 12) / 2, boxY + 9);
@@ -2623,7 +3065,7 @@ int pinEntryScreen(const char* title) {
         tft.fillScreen(TFT_BLACK);
         drawInoIconBar();
 
-        // Title — plain text, centered, clean
+        // Title ΓÇö plain text, centered, clean
         tft.setTextSize(1);
         tft.setTextColor(HALEHOUND_HOTPINK);
         int tw = strlen(title) * 6;
@@ -2655,7 +3097,7 @@ int pinEntryScreen(const char* title) {
             int by = padY + row * (btnH + gapY);
 
             if (i == 9 || i == 11) {
-                // CLR / OK — violet accent, textSize 1
+                // CLR / OK ΓÇö violet accent, textSize 1
                 tft.fillRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_DARK);
                 tft.drawRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_VIOLET);
                 tft.setTextSize(1);
@@ -2664,7 +3106,7 @@ int pinEntryScreen(const char* title) {
                 tft.setCursor(bx + (btnW - ltw) / 2, by + 16);
                 tft.print(labels[i]);
             } else {
-                // Digit buttons — textSize 2 for readable numbers
+                // Digit buttons ΓÇö textSize 2 for readable numbers
                 tft.fillRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_DARK);
                 tft.drawRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_MAGENTA);
                 tft.setTextSize(2);
@@ -2680,7 +3122,7 @@ int pinEntryScreen(const char* title) {
     while (true) {
         touchButtonsUpdate();
 
-        // Back button — cancel
+        // Back button ΓÇö cancel
         if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
             return -1;
         }
@@ -2725,9 +3167,9 @@ int pinEntryScreen(const char* title) {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // PIN SETUP LOOP - Settings menu handler for Set PIN
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void pinSetupLoop() {
     auto drawPinMenu = [&]() {
@@ -2740,7 +3182,7 @@ void pinSetupLoop() {
         // Separator
         tft.drawLine(20, 72, SCREEN_WIDTH - 20, 72, HALEHOUND_VIOLET);
 
-        // Current status — small text, centered
+        // Current status ΓÇö small text, centered
         tft.setTextSize(1);
         tft.setTextColor(pin_enabled ? HALEHOUND_HOTPINK : HALEHOUND_GUNMETAL);
         const char* statusText = pin_enabled ? "PIN LOCK: ENABLED" : "PIN LOCK: DISABLED";
@@ -2792,7 +3234,7 @@ void pinSetupLoop() {
             delay(200);
 
             if (pin_enabled) {
-                // Disabling — verify current PIN first
+                // Disabling ΓÇö verify current PIN first
                 int entered = pinEntryScreen("VERIFY");
                 if (entered == -1) {
                     drawPinMenu();
@@ -2811,7 +3253,7 @@ void pinSetupLoop() {
                     drawPinMenu();
                 }
             } else {
-                // Enabling — enter new PIN
+                // Enabling ΓÇö enter new PIN
                 int newPin = pinEntryScreen("NEW PIN");
                 if (newPin == -1) {
                     drawPinMenu();
@@ -2889,27 +3331,244 @@ void pinSetupLoop() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// VALHALLA PROTOCOL — Legal Disclaimer + Blue Team Mode + Panic Button
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// VALHALLA PROTOCOL ΓÇö Legal Disclaimer + Blue Team Mode + Panic Button
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
-// Offensive tools are always available — no disclaimer/liability gate.
+// Check if offensive functions are allowed
 bool isOffensiveAllowed() {
-    return true;
+    if (blue_team_mode) return false;
+    return disclaimer_accepted;
 }
 
-// Blue Team blocked screen removed along with the disclaimer gate — stub kept
-// so any remaining call sites still compile, but it is never reached.
+// ΓöÇΓöÇΓöÇ Blue Team Blocked Screen (2-second overlay) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 void showBlueTeamBlockedScreen() {
+    tft.fillScreen(TFT_BLACK);
+
+    // Skull watermark ΓÇö very dark
+    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x1841);
+
+    // Double border
+    tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, VALHALLA_BLUE);
+    tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_VIOLET);
+
+    // Title ΓÇö glitch in electric blue
+    drawGlitchTitle(SCALE_Y(100), "BLUE TEAM");
+    drawGlitchStatus(SCALE_Y(125), "MODE ACTIVE", HALEHOUND_VIOLET);
+
+    // Info text
+    drawCenteredText(SCALE_Y(160), "Offensive functions disabled", HALEHOUND_MAGENTA, 1);
+    drawCenteredText(SCALE_Y(180), "VALHALLA protocol engaged", HALEHOUND_GUNMETAL, 1);
+
+    // Hint to unlock
+    drawCenteredText(SCALE_Y(220), "Tap offensive tool to unlock", HALEHOUND_GUNMETAL, 1);
+    drawCenteredText(SCALE_Y(235), "via disclaimer acceptance", HALEHOUND_GUNMETAL, 1);
+
+    delay(2000);
 }
 
-// Legal disclaimer screen removed — offensive tools run without a prompt.
-// Stub kept so any remaining call sites still compile; always "accepts".
+// ΓöÇΓöÇΓöÇ Legal Disclaimer Screen ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// Returns true if user accepted, false if declined
 bool showDisclaimerScreen() {
-    return true;
+    // Disclaimer text lines
+    const char* disclaimerLines[] = {
+        "This device contains offensive",
+        "security tools. By proceeding",
+        "you accept FULL personal",
+        "liability for all actions.",
+        "",
+        "Unauthorized use of jamming,",
+        "deauth, replay, and exploit",
+        "tools violates federal law.",
+        "",
+        "Use ONLY on systems you own",
+        "or have written permission",
+        "to test.",
+        "",
+        "47 U.S.C. 333 - Jamming",
+        "18 U.S.C. 1030 - CFAA",
+        "",
+        "YOU HAVE BEEN WARNED."
+    };
+    const int numLines = 17;
+    const int visibleLines = 5;
+    const int lineHeight = 12;
+    int scrollOffset = 0;
+    int maxScroll = numLines - visibleLines;
+    if (maxScroll < 0) maxScroll = 0;
+
+    // Text area Y bounds
+    const int textAreaY = SCALE_Y(210);
+    const int textAreaH = visibleLines * lineHeight;
+
+    auto drawDisclaimerPage = [&]() {
+        tft.fillScreen(TFT_BLACK);
+
+        // Skull watermark ΓÇö very dark
+        tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x1841);
+
+        // Double border ΓÇö violet outer, magenta inner
+        tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
+        tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_MAGENTA);
+
+        // Disclaimer skull centered at top
+        int skullX = (SCREEN_WIDTH - 120) / 2;
+        tft.drawBitmap(skullX, SCALE_Y(10), bitmap_disclaimer_skull, 120, 160, VALHALLA_BLUE);
+
+        // Title ΓÇö glitch Nosifer
+        drawGlitchTitle(SCALE_Y(175), "LIABILITY");
+        drawGlitchStatus(SCALE_Y(195), "DISCLAIMER", HALEHOUND_VIOLET);
+
+        // Separator line
+        tft.drawLine(20, SCALE_Y(205), SCREEN_WIDTH - 20, SCALE_Y(205), HALEHOUND_VIOLET);
+    };
+
+    auto drawTextArea = [&]() {
+        // Clear text area
+        tft.fillRect(8, textAreaY, SCREEN_WIDTH - 16, textAreaH, TFT_BLACK);
+
+        tft.setTextSize(1);
+        for (int i = 0; i < visibleLines && (scrollOffset + i) < numLines; i++) {
+            int lineIdx = scrollOffset + i;
+            const char* line = disclaimerLines[lineIdx];
+
+            // Legal citations in violet, rest in magenta
+            bool isCitation = (strstr(line, "U.S.C.") != NULL);
+            bool isWarning = (strcmp(line, "YOU HAVE BEEN WARNED.") == 0);
+
+            if (isCitation) {
+                tft.setTextColor(HALEHOUND_VIOLET, TFT_BLACK);
+            } else if (isWarning) {
+                tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+            } else {
+                tft.setTextColor(HALEHOUND_MAGENTA, TFT_BLACK);
+            }
+
+            // Center each line
+            int tw = strlen(line) * 6;
+            int tx = (SCREEN_WIDTH - tw) / 2;
+            if (tx < 8) tx = 8;
+            tft.setCursor(tx, textAreaY + i * lineHeight);
+            tft.print(line);
+        }
+
+        // Scroll indicator
+        if (maxScroll > 0) {
+            tft.setTextSize(1);
+            tft.setTextColor(HALEHOUND_GUNMETAL, TFT_BLACK);
+            if (scrollOffset < maxScroll) {
+                tft.setCursor(SCREEN_WIDTH - 20, textAreaY + textAreaH - 10);
+                tft.print("v");
+            }
+            if (scrollOffset > 0) {
+                tft.setCursor(SCREEN_WIDTH - 20, textAreaY);
+                tft.print("^");
+            }
+        }
+    };
+
+    // Button dimensions (shared between draw and touch)
+    const int dBtnW = SCALE_W(95);
+    const int dBtnH = SCALE_H(32);
+    const int dBtnY = SCALE_Y(282);
+    const int dAcceptX = SCALE_X(15);
+    const int dDeclineX = SCREEN_WIDTH - dBtnW - SCALE_X(15);
+
+    auto drawButtons = [&]() {
+        // Separator above buttons
+        tft.drawLine(20, SCALE_Y(275), SCREEN_WIDTH - 20, SCALE_Y(275), HALEHOUND_VIOLET);
+
+        // ACCEPT button ΓÇö left side
+        tft.fillRoundRect(dAcceptX, dBtnY, dBtnW, dBtnH, 5, HALEHOUND_DARK);
+        tft.drawRoundRect(dAcceptX, dBtnY, dBtnW, dBtnH, 5, VALHALLA_PURPLE);
+        tft.setTextSize(1);
+        tft.setTextColor(HALEHOUND_HOTPINK);
+        tft.setCursor(dAcceptX + 20, dBtnY + (dBtnH - 8) / 2);
+        tft.print("ACCEPT");
+
+        // DECLINE button ΓÇö right side
+        tft.fillRoundRect(dDeclineX, dBtnY, dBtnW, dBtnH, 5, HALEHOUND_DARK);
+        tft.drawRoundRect(dDeclineX, dBtnY, dBtnW, dBtnH, 5, HALEHOUND_GUNMETAL);
+        tft.setTextSize(1);
+        tft.setTextColor(HALEHOUND_GUNMETAL);
+        tft.setCursor(dDeclineX + 15, dBtnY + (dBtnH - 8) / 2);
+        tft.print("DECLINE");
+    };
+
+    drawDisclaimerPage();
+    drawTextArea();
+    drawButtons();
+
+    // Auto-scroll timer
+    unsigned long lastAutoScroll = millis();
+    const unsigned long autoScrollInterval = 3000;  // 3 seconds per scroll
+
+    while (true) {
+        touchButtonsUpdate();
+
+        // BOOT button = decline
+        if (buttonPressed(BTN_BOOT)) {
+            delay(200);
+            return false;
+        }
+
+        // Auto-scroll
+        if (maxScroll > 0 && scrollOffset < maxScroll) {
+            if (millis() - lastAutoScroll > autoScrollInterval) {
+                scrollOffset++;
+                drawTextArea();
+                lastAutoScroll = millis();
+            }
+        }
+
+        // Touch handling
+        uint16_t tx, ty;
+        if (getTouchPoint(&tx, &ty)) {
+            consumeTouch();
+
+            // ACCEPT button
+            if (tx >= dAcceptX && tx <= dAcceptX + dBtnW && ty >= dBtnY && ty <= dBtnY + dBtnH) {
+                // Flash button
+                tft.fillRoundRect(dAcceptX, dBtnY, dBtnW, dBtnH, 5, VALHALLA_PURPLE);
+                tft.setTextColor(TFT_WHITE);
+                tft.setCursor(dAcceptX + 20, dBtnY + (dBtnH - 8) / 2);
+                tft.print("ACCEPT");
+                delay(300);
+
+                disclaimer_accepted = true;
+                if (blue_team_mode) {
+                    blue_team_mode = false;
+                }
+                saveSettings();
+                return true;
+            }
+
+            // DECLINE button
+            if (tx >= dDeclineX && tx <= dDeclineX + dBtnW && ty >= dBtnY && ty <= dBtnY + dBtnH) {
+                delay(200);
+                return false;
+            }
+
+            // Scroll down ΓÇö tap bottom half of text area
+            if (ty >= textAreaY && ty <= textAreaY + textAreaH) {
+                if (ty > textAreaY + textAreaH / 2 && scrollOffset < maxScroll) {
+                    scrollOffset++;
+                    drawTextArea();
+                    lastAutoScroll = millis();
+                } else if (ty <= textAreaY + textAreaH / 2 && scrollOffset > 0) {
+                    scrollOffset--;
+                    drawTextArea();
+                    lastAutoScroll = millis();
+                }
+                delay(200);
+            }
+        }
+
+        delay(30);
+    }
 }
 
-// ─── SD Card Recursive Wipe ─────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ SD Card Recursive Wipe ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 void recursiveDeleteSD(File dir) {
     while (true) {
         File entry = dir.openNextFile();
@@ -2925,19 +3584,19 @@ void recursiveDeleteSD(File dir) {
     }
 }
 
-// ─── VALHALLA Protocol Activation ───────────────────────────────────────
+// ΓöÇΓöÇΓöÇ VALHALLA Protocol Activation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 void activateValhalla() {
     // Phase 1: Confirmation screen
     tft.fillScreen(TFT_BLACK);
 
-    // Skull watermark — dark red
+    // Skull watermark ΓÇö dark red
     tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x1841);
 
-    // Double border — violet + electric blue
+    // Double border ΓÇö violet + electric blue
     tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
     tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, VALHALLA_BLUE);
 
-    // Disclaimer skull centered — pulsing red
+    // Disclaimer skull centered ΓÇö pulsing red
     int skullX = (SCREEN_WIDTH - 120) / 2;
     tft.drawBitmap(skullX, SCALE_Y(10), bitmap_disclaimer_skull, 120, 160, TFT_RED);
 
@@ -2992,14 +3651,14 @@ void activateValhalla() {
     const unsigned long holdDuration = 3000;  // 3 seconds
 
     while (true) {
-        // BOOT button = cancel (direct GPIO — no touchButtonsUpdate needed)
+        // BOOT button = cancel (direct GPIO ΓÇö no touchButtonsUpdate needed)
         if (IS_BOOT_PRESSED()) {
             delay(200);
             return;
         }
 
         if (!holding) {
-            // Waiting for initial touch — edge-triggered getTouchPoint()
+            // Waiting for initial touch ΓÇö edge-triggered getTouchPoint()
             uint16_t tx, ty;
             bool touched = getTouchPoint(&tx, &ty);
 
@@ -3011,16 +3670,16 @@ void activateValhalla() {
                 return;
             }
 
-            // Check CONFIRM button — start hold
+            // Check CONFIRM button ΓÇö start hold
             if (touched && tx >= confirmX && tx <= confirmX + confirmW &&
                 ty >= confirmY && ty <= confirmY + confirmH) {
                 holdStart = millis();
                 holding = true;
             }
         } else {
-            // Holding — use level-triggered isStillTouched() to track finger
+            // Holding ΓÇö use level-triggered isStillTouched() to track finger
             if (!isStillTouched()) {
-                // Finger lifted — reset hold
+                // Finger lifted ΓÇö reset hold
                 holding = false;
                 tft.fillRoundRect(confirmX, confirmY, confirmW, confirmH, 5, HALEHOUND_DARK);
                 tft.drawRoundRect(confirmX, confirmY, confirmW, confirmH, 5, TFT_RED);
@@ -3029,7 +3688,7 @@ void activateValhalla() {
                 tft.setCursor(confirmX + 8, confirmY + (confirmH - 8) / 2);
                 tft.print("HOLD 3s CONFIRM");
             } else {
-                // Still touching — draw progress bar inside button
+                // Still touching ΓÇö draw progress bar inside button
                 unsigned long elapsed = millis() - holdStart;
                 int progress = map(min(elapsed, holdDuration), 0, holdDuration, 0, confirmW - 4);
                 tft.fillRect(confirmX + 2, confirmY + 2, progress, confirmH - 4, TFT_RED);
@@ -3116,12 +3775,12 @@ void activateValhalla() {
     ESP.restart();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // MAIN BUTTON/TOUCH HANDLER
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void handleButtons() {
-    // Screen sleep check — disabled while a feature is active (jammers, attacks, etc.)
+    // Screen sleep check ΓÇö disabled while a feature is active (jammers, attacks, etc.)
     if (screen_timeout_seconds > 0 && !screen_asleep && !feature_active) {
         if (millis() - last_interaction_time > (unsigned long)screen_timeout_seconds * 1000) {
             ledcWrite(0, 0);
@@ -3130,7 +3789,7 @@ void handleButtons() {
         }
     }
 
-    // Wake on any touch or button press — eat the input
+    // Wake on any touch or button press ΓÇö eat the input
     if (screen_asleep) {
         touchButtonsUpdate();
         if (isTouched() || isBootButtonPressed()) {
@@ -3157,17 +3816,21 @@ void handleButtons() {
         switch (current_menu_index) {
             case 0: handleWiFiSubmenuTouch(); break;
             case 1: handleBluetoothSubmenuTouch(); break;
-            case 2: handleSIGINTSubmenuTouch(); break;
-            case 3: handleToolsSubmenuTouch(); break;
-            case 4: handleSettingsSubmenuTouch(); break;
-            case 5: handleAboutPage(); break;
+            case 2: handleNRFSubmenuTouch(); break;
+            case 3: handleSubGHzSubmenuTouch(); break;
+            case 4: handleRFIDSubmenuTouch(); break;
+            case 5: handleJamDetectSubmenuTouch(); break;
+            case 6: handleSIGINTSubmenuTouch(); break;
+            case 7: handleToolsSubmenuTouch(); break;
+            case 8: handleSettingsSubmenuTouch(); break;
+            case 9: handleAboutPage(); break;
             default: break;
         }
     } else {
         // Main menu touch handling
         touchButtonsUpdate();
 
-        // VALHALLA / BLUE TEAM banner tap — bottom bar
+        // VALHALLA / BLUE TEAM banner tap ΓÇö bottom bar
         {
             int barY = SCREEN_HEIGHT - 22;
             if (isTouchInArea(2, barY, SCREEN_WIDTH - 4, 20)) {
@@ -3185,7 +3848,7 @@ void handleButtons() {
             }
         }
 
-        // Lock icon tap — manual lock (top-right corner)
+        // Lock icon tap ΓÇö manual lock (top-right corner)
         if (pin_enabled && isTouchInArea(SCREEN_WIDTH - 28, 0, 28, 22)) {
             device_locked = true;
             ledcWrite(0, 0);
@@ -3197,8 +3860,8 @@ void handleButtons() {
 
         // Check touch on menu items
         for (int i = 0; i < NUM_MENU_ITEMS; i++) {
-            int column = (i < 3) ? 0 : 1;
-            int row = (i < 3) ? i : (i - 3);
+            int column = (i < 5) ? 0 : 1;
+            int row = (i < 5) ? i : (i - 5);
             int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
             int y_position = Y_START + row * Y_SPACING;
 
@@ -3222,9 +3885,9 @@ void handleButtons() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // SPLASH SCREEN
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void showSplash() {
     tft.fillScreen(HALEHOUND_BLACK);
@@ -3237,10 +3900,10 @@ void showSplash() {
     tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);  // Dark cyan watermark (brightened for all panel variants)
 
 #ifdef CYD_35
-    // Title — glitch effect (scaled for 480px height)
-    drawGlitchTitle(120, "EVAWARE");
+    // Title ΓÇö glitch effect (scaled for 480px height)
+    drawGlitchTitle(120, "HALEHOUND");
 
-    // Subtitle — shows CYD or CYD-HAT so user knows which firmware they flashed
+    // Subtitle ΓÇö shows CYD or CYD-HAT so user knows which firmware they flashed
     drawGlitchStatus(170, FW_EDITION, HALEHOUND_MAGENTA);
 
     // Version
@@ -3250,10 +3913,10 @@ void showSplash() {
     // Board info
     drawCenteredText(215, CYD_BOARD_NAME, HALEHOUND_HOTPINK, 1);
 #else
-    // Title — glitch effect
-    drawGlitchTitle(80, "EVAWARE");
+    // Title ΓÇö glitch effect
+    drawGlitchTitle(80, "HALEHOUND");
 
-    // Subtitle — shows CYD or CYD-HAT so user knows which firmware they flashed
+    // Subtitle ΓÇö shows CYD or CYD-HAT so user knows which firmware they flashed
     drawGlitchStatus(110, FW_EDITION, HALEHOUND_MAGENTA);
 
     // Version
@@ -3269,9 +3932,9 @@ void showSplash() {
     drawCenteredText(SCREEN_HEIGHT - 25, "github.com/JesseCHale", HALEHOUND_VIOLET, 1);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// BOOT DIAGNOSTICS — Shows radio/SPI status on TFT (works without serial)
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+// BOOT DIAGNOSTICS ΓÇö Shows radio/SPI status on TFT (works without serial)
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void runBootDiagnostics() {
     tft.fillScreen(TFT_BLACK);
@@ -3290,7 +3953,7 @@ void runBootDiagnostics() {
     tft.printf("SPI Bus: SCK=%d MISO=%d MOSI=%d", VSPI_SCK, VSPI_MISO, VSPI_MOSI);
     y += 16;
 
-    // ── NRF24 TEST ──────────────────────────────────────────────
+    // ΓöÇΓöÇ NRF24 TEST ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     tft.setTextColor(TFT_CYAN, TFT_BLACK);
     tft.setCursor(5, y);
     tft.printf("NRF24: CE=%d CSN=%d", NRF24_CE, NRF24_CSN);
@@ -3309,7 +3972,7 @@ void runBootDiagnostics() {
     SPI.setFrequency(4000000);
     delay(10);
 
-    // Try NRF24 STATUS register read — 3 attempts with increasing delays
+    // Try NRF24 STATUS register read ΓÇö 3 attempts with increasing delays
     bool nrfFound = false;
     byte nrfStatus[3] = {0, 0, 0};
     int nrfDelays[] = {10, 100, 500};
@@ -3351,7 +4014,7 @@ void runBootDiagnostics() {
     }
     y += 18;
 
-    // ── CC1101 TEST ─────────────────────────────────────────────
+    // ΓöÇΓöÇ CC1101 TEST ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     tft.setTextColor(TFT_CYAN, TFT_BLACK);
     tft.setCursor(5, y);
     tft.printf("CC1101: CS=%d GDO0=%d GDO2=%d", CC1101_CS, CC1101_GDO0, CC1101_GDO2);
@@ -3367,7 +4030,7 @@ void runBootDiagnostics() {
     pinMode(SD_CS, OUTPUT);
     digitalWrite(SD_CS, HIGH);
 
-    // Safe CC1101 check — ELECHOUSE library has blocking while(MISO)
+    // Safe CC1101 check ΓÇö ELECHOUSE library has blocking while(MISO)
     // loops that freeze forever if no CC1101 is connected
     bool cc1101Found = false;
     if (cc1101SafeCheck()) {
@@ -3386,7 +4049,7 @@ void runBootDiagnostics() {
     }
     y += 18;
 
-    // ── SD CARD TEST ────────────────────────────────────────────
+    // ΓöÇΓöÇ SD CARD TEST ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     tft.setTextColor(TFT_CYAN, TFT_BLACK);
     tft.setCursor(5, y);
     tft.printf("SD Card: CS=%d", SD_CS);
@@ -3398,7 +4061,7 @@ void runBootDiagnostics() {
     pinMode(NRF24_CSN, OUTPUT);   digitalWrite(NRF24_CSN, HIGH);
     pinMode(CC1101_CS, OUTPUT);   digitalWrite(CC1101_CS, HIGH);
 
-    // Send CMD0 (GO_IDLE) — card present returns 0x01
+    // Send CMD0 (GO_IDLE) ΓÇö card present returns 0x01
     digitalWrite(SD_CS, LOW);
     delayMicroseconds(5);
     for (int i = 0; i < 10; i++) SPI.transfer(0xFF);
@@ -3421,7 +4084,7 @@ void runBootDiagnostics() {
     }
     y += 18;
 
-    // ── SYSTEM INFO ─────────────────────────────────────────────
+    // ΓöÇΓöÇ SYSTEM INFO ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.setCursor(5, y);
     tft.printf("Heap:%d  CPU:%dMHz  Flash:%dMB",
@@ -3436,7 +4099,7 @@ void runBootDiagnostics() {
         (uint8_t)(mac >> 24), (uint8_t)(mac >> 32), (uint8_t)(mac >> 40));
     y += 18;
 
-    // ── COUNTDOWN ───────────────────────────────────────────────
+    // ΓöÇΓöÇ COUNTDOWN ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     bool hasError = !nrfFound || !cc1101Found;
     int waitTime = hasError ? 8 : 3;
 
@@ -3461,9 +4124,9 @@ void runBootDiagnostics() {
     pinMode(NRF24_CSN, OUTPUT);   digitalWrite(NRF24_CSN, HIGH);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // SETUP
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void setup() {
     // Initialize Serial
@@ -3479,9 +4142,9 @@ void setup() {
 
     // Initialize display
     tft.init();
-    tft.setRotation(0);  // Portrait mode — keeps 240x320 coordinate space
+    tft.setRotation(0);  // Portrait mode ΓÇö keeps 240x320 coordinate space
 #ifdef CYD_35
-    tft.invertDisplay(false);  // ST7796 panel has native inversion — OFF for correct colors
+    tft.invertDisplay(false);  // ST7796 panel has native inversion ΓÇö OFF for correct colors
 #else
     tft.invertDisplay(false);  // ILI9341 needs inversion OFF
 #endif
@@ -3502,15 +4165,15 @@ void setup() {
     spiManagerSetup();
     Serial.println("[INIT] SPI Manager OK");
 
-    // Touch buttons — init early so touch is ready before NRF24 check
-    // XPT2046 uses software SPI (2.8") or shared HSPI (E32R35T) — neither conflicts with VSPI radios
+    // Touch buttons ΓÇö init early so touch is ready before NRF24 check
+    // XPT2046 uses software SPI (2.8") or shared HSPI (E32R35T) ΓÇö neither conflicts with VSPI radios
     initButtons();
     Serial.println("[INIT] Touch buttons OK");
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // WRONG FIRMWARE DETECTION — NRF24 SPI probe catches pin mismatches
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+    // WRONG FIRMWARE DETECTION ΓÇö NRF24 SPI probe catches pin mismatches
     // Covers: CYD vs E32R28T (swapped CSN pins), CYD vs CYD-HAT, missing NRF24
-    // ═══════════════════════════════════════════════════════════════════════
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
     {
         // Properly claim SPI for NRF24 check
         SPI.end();
@@ -3525,7 +4188,7 @@ void setup() {
         SPI.begin(VSPI_SCK, VSPI_MISO, VSPI_MOSI);
         delay(150);  // PA+LNA settling time
 
-        // Reset SETUP_AW to default first — promiscuous sniffer leaves it at 0x00
+        // Reset SETUP_AW to default first ΓÇö promiscuous sniffer leaves it at 0x00
         // NRF24 retains registers across ESP32 reset (no power cycle on USB)
         SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
         digitalWrite(NRF24_CSN, LOW);
@@ -3544,10 +4207,10 @@ void setup() {
         SPI.endTransaction();
 
         bool nrfFound = (nrfSetupAw >= 0x01 && nrfSetupAw <= 0x03);
-        Serial.printf("[INIT] NRF24 check: STATUS=0x%02X SETUP_AW=0x%02X → %s\n",
+        Serial.printf("[INIT] NRF24 check: STATUS=0x%02X SETUP_AW=0x%02X ΓåÆ %s\n",
                       nrfStatus, nrfSetupAw, nrfFound ? "OK" : "NOT FOUND");
 
-        // Clean up — restore SPI to spiManager state
+        // Clean up ΓÇö restore SPI to spiManager state
         SPI.end();
         SPI.begin(VSPI_SCK, VSPI_MISO, VSPI_MOSI);
         digitalWrite(NRF24_CSN, HIGH);
@@ -3556,7 +4219,7 @@ void setup() {
         digitalWrite(PN532_CS, HIGH);
 
         if (!nrfFound) {
-            // NRF24 not responding on compiled pin config — likely wrong firmware
+            // NRF24 not responding on compiled pin config ΓÇö likely wrong firmware
             Serial.println("[INIT] WARNING: NRF24 not found on compiled pins!");
             Serial.printf("[INIT] Compiled for: %s (CE=%d, CSN=%d)\n", FW_DEVICE, NRF24_CE, NRF24_CSN);
 
@@ -3594,7 +4257,7 @@ void setup() {
             drawCenteredText(255, "Or: no NRF24 wired yet", HALEHOUND_GUNMETAL, 1);
             drawCenteredText(275, "Touch screen to continue", HALEHOUND_GUNMETAL, 1);
 
-            // Wait for touch to continue — don't brick the device, just warn
+            // Wait for touch to continue ΓÇö don't brick the device, just warn
             while (true) {
                 uint16_t wx, wy;
                 if (getTouchPoint(&wx, &wy)) break;
@@ -3609,7 +4272,7 @@ void setup() {
         }
     }
 
-    // Boot diagnostics disabled for normal boot — function kept for second board debugging
+    // Boot diagnostics disabled for normal boot ΓÇö function kept for second board debugging
     // runBootDiagnostics();
 
     // Touch test available via runTouchTest() if needed for recalibration
@@ -3620,7 +4283,7 @@ void setup() {
     ledcWrite(0, brightness_level);
     applyColorMode(color_mode);
 
-    // Apply saved rotation — must happen before applyColorOrder (which needs correct MADCTL base)
+    // Apply saved rotation ΓÇö must happen before applyColorOrder (which needs correct MADCTL base)
     if (screen_rotation != 0) {
         tft.setRotation(screen_rotation);
         Serial.printf("[INIT] Rotation set to %d\n", screen_rotation);
@@ -3632,7 +4295,7 @@ void setup() {
     Serial.println("[INIT] Settings loaded");
 
     // E32R28T: Shut down SC8002B amp immediately (GPIO 4 = amp enable)
-    // Must happen BEFORE PA init — prevents 6.5mA quiescent draw from floating pin
+    // Must happen BEFORE PA init ΓÇö prevents 6.5mA quiescent draw from floating pin
     #if CYD_HAS_AMP
     pinMode(CC1101_TX_EN, OUTPUT);
     digitalWrite(CC1101_TX_EN, LOW);   // LOW = amp shutdown
@@ -3645,8 +4308,8 @@ void setup() {
         pinMode(CC1101_TX_EN, OUTPUT);
         pinMode(CC1101_RX_EN, OUTPUT);
         digitalWrite(CC1101_TX_EN, LOW);
-        digitalWrite(CC1101_RX_EN, HIGH);  // RX mode default — keeps GPIO0 HIGH (BOOT safe)
-        Serial.println("[INIT] CC1101 PA module — TX_EN/RX_EN pins initialized (RX mode)");
+        digitalWrite(CC1101_RX_EN, HIGH);  // RX mode default ΓÇö keeps GPIO0 HIGH (BOOT safe)
+        Serial.println("[INIT] CC1101 PA module ΓÇö TX_EN/RX_EN pins initialized (RX mode)");
     }
     #endif
 
@@ -3654,7 +4317,7 @@ void setup() {
     {
         extern bool touch_calibrated;
         if (!touch_calibrated) {
-            Serial.println("[INIT] No touch calibration found — running first-time calibration");
+            Serial.println("[INIT] No touch calibration found ΓÇö running first-time calibration");
             runTouchCalibration();
         }
     }
@@ -3676,9 +4339,9 @@ void setup() {
     Serial.println("[INIT] Setup complete - entering main loop");
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 // MAIN LOOP
-// ═══════════════════════════════════════════════════════════════════════════
+// ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
 void loop() {
     handleButtons();

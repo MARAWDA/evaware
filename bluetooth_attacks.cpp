@@ -1290,7 +1290,7 @@ void setup() {
 
     // Initialize BLE — must wait for controller to be fully ready before setting TX power
     releaseClassicBtMemory();
-    BLEDevice::init("HaleHound");
+    BLEDevice::init("EVAWARE");
     delay(150);  // BLE controller needs time to finish internal init
 
     esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
@@ -1452,7 +1452,7 @@ void cleanup() {
 
 void bleInit() {
     releaseClassicBtMemory();
-    BLEDevice::init("HaleHound");
+    BLEDevice::init("EVAWARE");
 }
 
 void bleCleanup() {
@@ -2169,7 +2169,7 @@ void setup() {
 
     // Initialize BLE — wait for controller ready before TX power
     releaseClassicBtMemory();
-    BLEDevice::init("HaleHound");
+    BLEDevice::init("EVAWARE");
     delay(150);  // BLE controller needs time to finish internal init
 
     esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
@@ -4344,7 +4344,7 @@ void setup() {
     delay(200);
 
     releaseClassicBtMemory();
-    BLEDevice::init("HaleHound");
+    BLEDevice::init("EVAWARE");
     delay(150);
 
     esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
@@ -5068,7 +5068,7 @@ static void startReplay() {
 
     // Re-init for advertising
     releaseClassicBtMemory();
-    BLEDevice::init("HaleHound");
+    BLEDevice::init("EVAWARE");
     delay(150);
 
     esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
@@ -9049,7 +9049,7 @@ static void drawBdDisplay() {
     // Device name
     tft.setTextColor(HALEHOUND_MAGENTA, TFT_BLACK);
     tft.setCursor(10, y);
-    tft.print("Name: HaleHound KB");
+    tft.print("Name: EVAWARE KB");
     y += 14;
 
     tft.drawLine(10, y, SCREEN_WIDTH - 10, y, HALEHOUND_HOTPINK);
@@ -9155,7 +9155,7 @@ void setup() {
     // Initialize BLE Keyboard
     // ESP32-BLE-Keyboard calls BLEDevice::init() internally in begin()
     if (bleKb) { delete bleKb; bleKb = nullptr; }
-    bleKb = new BleKeyboard("HaleHound KB", "HaleHound", 100);
+    bleKb = new BleKeyboard("EVAWARE KB", "EVAWARE", 100);
     bleKb->begin();
     delay(150);  // Settle time before TX power set
 
@@ -9168,7 +9168,7 @@ void setup() {
     bdUiDrawn = true;
 
     #if CYD_DEBUG
-    Serial.println("[BLE_DUCKY] Setup complete, advertising as 'HaleHound KB'");
+    Serial.println("[BLE_DUCKY] Setup complete, advertising as 'EVAWARE KB'");
     Serial.printf("[BLE_DUCKY] Free heap: %u\n", ESP.getFreeHeap());
     #endif
 }

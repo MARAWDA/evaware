@@ -47,16 +47,16 @@
 
 #ifdef CYD_35
   #define FW_EDITION   "E32R35T Edition"
-  #define FW_DEVICE    "HaleHound-E32R35T"
+  #define FW_DEVICE    "EVAWARE-E32R35T"
 #elif defined(NMRF_HAT)
   #define FW_EDITION   "CYD-HAT Edition"
-  #define FW_DEVICE    "HaleHound-CYD-HAT"
+  #define FW_DEVICE    "EVAWARE-CYD-HAT"
 #elif defined(CYD_E32R28T)
   #define FW_EDITION   "E32R28T Edition"
-  #define FW_DEVICE    "HaleHound-E32R28T"
+  #define FW_DEVICE    "EVAWARE-E32R28T"
 #else
   #define FW_EDITION   "CYD Edition"
-  #define FW_DEVICE    "HaleHound-CYD"
+  #define FW_DEVICE    "EVAWARE-CYD"
 #endif
 
 #define FW_FULL_VERSION FW_VERSION " " FW_EDITION
@@ -67,7 +67,7 @@
 
 #ifdef CYD_28
   #undef  CYD_BOARD_NAME
-  #define CYD_BOARD_NAME    "HaleHound-CYD 2.8\""
+  #define CYD_BOARD_NAME    "EVAWARE-CYD 2.8\""
   #define CYD_SCREEN_WIDTH  240
   #define CYD_SCREEN_HEIGHT 320
   #define CYD_TFT_BL        21    // Backlight on GPIO21
@@ -76,12 +76,12 @@
 #ifdef CYD_E32R28T
   // Override board name for E32R28T variant
   #undef  CYD_BOARD_NAME
-  #define CYD_BOARD_NAME    "HaleHound-E32R28T 2.8\""
+  #define CYD_BOARD_NAME    "EVAWARE-E32R28T 2.8\""
 #endif
 
 #ifdef CYD_35
   #undef  CYD_BOARD_NAME
-  #define CYD_BOARD_NAME    "HaleHound-E32R35T 3.5\""
+  #define CYD_BOARD_NAME    "EVAWARE-E32R35T 3.5\""
   #define CYD_SCREEN_WIDTH  320
   #define CYD_SCREEN_HEIGHT 480
   #define CYD_TFT_BL        27    // Backlight on GPIO27

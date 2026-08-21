@@ -111,8 +111,8 @@ const unsigned char *bitmap_icons[NUM_MENU_ITEMS] = {
     bitmap_icon_skull_about
 };
 
-// WiFi Submenu - 10 items
-const int NUM_SUBMENU_ITEMS = 10;
+// WiFi Submenu - 9 items
+const int NUM_SUBMENU_ITEMS = 9;
 const char *submenu_items[NUM_SUBMENU_ITEMS] = {
     "Packet Monitor",
     "Beacon Spammer",
@@ -122,7 +122,6 @@ const char *submenu_items[NUM_SUBMENU_ITEMS] = {
     "Captive Portal",
     "Station Scanner",
     "Auth Flood",
-    "WiFi Guardian",
     "Back to Main Menu"
 };
 
@@ -135,7 +134,6 @@ const unsigned char *wifi_submenu_icons[NUM_SUBMENU_ITEMS] = {
     bitmap_icon_bash,
     bitmap_icon_graph,
     bitmap_icon_nuke,
-    bitmap_icon_signals,
     bitmap_icon_go_back
 };
 
@@ -655,7 +653,7 @@ void handleWiFiSubmenuTouch() {
             delay(200);
 
             // Execute selected item
-            if (current_submenu_index == 9) { // Back
+            if (current_submenu_index == 8) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -854,17 +852,6 @@ void handleWiFiSubmenuTouch() {
                         if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
                     }
                     AuthFlood::cleanup();
-                    break;
-                case 8: // WiFi Guardian (defensive — no disclaimer needed, receive-only)
-                    WifiGuardian::setup();
-                    while (!feature_exit_requested) {
-                        WifiGuardian::loop();
-                        touchButtonsUpdate();
-                        if (WifiGuardian::isExitRequested()) feature_exit_requested = true;
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
-                    }
-                    WifiGuardian::cleanup();
                     break;
             }
 
@@ -1262,42 +1249,27 @@ void handleNRFSubmenuTouch() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 void handleBadUSBPage() {
-    touchButtonsUpdate();
-
-    // Back icon from the one-item submenu returns straight to main.
-    if (isBackButtonTapped()) {
-        returnToMainMenu();
-        return;
-    }
-
     if (!feature_active) {
-        if (isTouchInArea(10, SUBMENU_Y_START, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
-            current_submenu_index = 0;
-            last_interaction_time = millis();
-            displaySubmenu();
-            delay(200);
-
-            if (!isOffensiveAllowed()) {
-                if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) returnToSubmenu(); }
-                else if (!showDisclaimerScreen()) returnToSubmenu();
-                if (!isOffensiveAllowed()) returnToSubmenu();
-            }
-
-            feature_active = true;
-            feature_exit_requested = false;
-            waitForTouchRelease();
-
-            BadUSB::setup();
-            while (!feature_exit_requested) {
-                BadUSB::loop();
-                if (BadUSB::isExitRequested()) feature_exit_requested = true;
-                touchButtonsUpdate();
-                if (isBackButtonTapped()) feature_exit_requested = true;
-                if (IS_BOOT_PRESSED()) feature_exit_requested = true;
-            }
-            BadUSB::cleanup();
-            returnToSubmenu();
+        if (!isOffensiveAllowed()) {
+            if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) { returnToMainMenu(); return; } }
+            else if (!showDisclaimerScreen()) { returnToMainMenu(); return; }
+            if (!isOffensiveAllowed()) { returnToMainMenu(); return; }
         }
+
+        feature_active = true;
+        feature_exit_requested = false;
+        waitForTouchRelease();
+
+        BadUSB::setup();
+        while (!feature_exit_requested) {
+            BadUSB::loop();
+            if (BadUSB::isExitRequested()) feature_exit_requested = true;
+            touchButtonsUpdate();
+            if (isBackButtonTapped()) feature_exit_requested = true;
+            if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+        }
+        BadUSB::cleanup();
+        returnToMainMenu();
     }
 }
 

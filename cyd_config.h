@@ -657,7 +657,7 @@
 #define MENU_TEXT_OFFSET_Y  SCALE_H(30)
 
 // Submenu layout
-#define SUBMENU_Y_START     SCALE_Y(30)     // First item Y
+#define SUBMENU_Y_START     SCALE_Y(42)     // First item Y - clears the back icon bar
 #define SUBMENU_Y_SPACING   SCALE_Y(28)     // Gap between items
 #define SUBMENU_LAST_GAP    SCALE_Y(10)     // Extra gap before "Back" item
 #define SUBMENU_TOUCH_W     (CYD_SCREEN_WIDTH - 20)  // Touch hit area width

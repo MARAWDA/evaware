@@ -29,6 +29,18 @@ extern TFT_eSPI tft;
 
 namespace BadUSB {
 
+// HaleHound only uses BLE — release Classic BT memory once before BLE init,
+// otherwise the BT controller can crash on repeated init/deinit cycles.
+static bool buClassicBtReleased = false;
+static void releaseClassicBtMemory() {
+    if (!buClassicBtReleased) {
+        esp_err_t err = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+        if (err == ESP_OK) {
+            buClassicBtReleased = true;
+        }
+    }
+}
+
 // ── State ─────────────────────────────────────────────────────────────────
 struct BuState {
     bool     connected;
@@ -154,24 +166,32 @@ static void runSelectedScript() {
     bu->bytesSent = 0;
 
     while (f.available() && bu->injecting) {
+        if (!bleKb->isConnected()) {
+            bu->connected = false;
+            setStatus("Disconnected mid-run");
+            break;
+        }
         char c = (char)f.read();
         if (c != '\r') {
             bleKb->write((uint8_t)c);
         }
         bu->bytesSent++;
-        delay(8);
+        delay(50);  // BLE HID needs spacing between reports, matches BLE Ducky
     }
 
     f.close();
+    bool disconnectedEarly = !bleKb->isConnected();
     bu->injecting = false;
-    setStatus(bu->bytesSent >= bu->bytesTotal ? "RUN COMPLETE" : "STOPPED");
+    if (!disconnectedEarly) {
+        setStatus(bu->bytesSent >= bu->bytesTotal ? "RUN COMPLETE" : "STOPPED");
+    }
 }
 
 // ── Draw the screen ─────────────────────────────────────────────────────
 static void drawBuDisplay() {
     tft.fillScreen(HALEHOUND_BLACK);
     drawStatusBar();
-    drawGlitchText(SCALE_Y(55), "BADUSB", &Nosifer_Regular10pt7b);
+    drawGlitchText(SCALE_Y(55), "BLU-USB", &Nosifer_Regular10pt7b);
     drawBuIconBar();
 
     int y = SCALE_Y(75);
@@ -256,14 +276,16 @@ void setup() {
 
     tft.fillScreen(HALEHOUND_BLACK);
     drawStatusBar();
-    drawGlitchText(SCALE_Y(55), "BADUSB", &Nosifer_Regular10pt7b);
+    drawGlitchText(SCALE_Y(55), "BLU-USB", &Nosifer_Regular10pt7b);
     drawBuIconBar();
 
     esp_wifi_stop();
     delay(100);
 
+    releaseClassicBtMemory();
+
     if (bleKb) { delete bleKb; bleKb = nullptr; }
-    bleKb = new BleKeyboard("EVAWARE BadUSB", "EVAWARE", 100);
+    bleKb = new BleKeyboard("EVAWARE Blu-USB", "EVAWARE", 100);
     bleKb->begin();
     delay(150);
 
@@ -276,14 +298,22 @@ void setup() {
     drawBuDisplay();
 
     #if CYD_DEBUG
-    Serial.println("[BADUSB] Setup complete, advertising as 'EVAWARE BadUSB'");
+    Serial.println("[BADUSB] Setup complete, advertising as 'EVAWARE Blu-USB'");
     Serial.printf("[BADUSB] Free heap: %u\n", ESP.getFreeHeap());
     #endif
 }
 
 // ── Loop ──────────────────────────────────────────────────────────────────
 void loop() {
-    if (!bu || !bleKb) return;
+    if (!bu || !bleKb) {
+        // Setup failed to allocate — still let the user back out.
+        touchButtonsUpdate();
+        uint16_t ttx, tty;
+        if (getTouchPoint(&ttx, &tty) || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            buExitRequested = true;
+        }
+        return;
+    }
 
     if (millis() - buLastDisplay >= 250) {
         bool wasConnected = bu->connected;

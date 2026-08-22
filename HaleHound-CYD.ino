@@ -42,6 +42,8 @@
 #include "spi_manager.h"
 #include "icon.h"
 #include "skull_bg.h"
+#include "evaware_bg.h"
+#include "josefin_sans_font.h"
 
 // Attack modules
 #include "wifi_attacks.h"
@@ -93,8 +95,8 @@ const char *menu_items[NUM_MENU_ITEMS] = {
     "WiFi",
     "Bluetooth",
     "2.4GHz",
-    "BadUSB",
-    "SIGINT",
+    "Blu-USB",
+    "GPS",
     "Tools",
     "Setting",
     "About"
@@ -137,8 +139,8 @@ const unsigned char *wifi_submenu_icons[NUM_SUBMENU_ITEMS] = {
     bitmap_icon_go_back
 };
 
-// Bluetooth Submenu - 10 items
-const int bluetooth_NUM_SUBMENU_ITEMS = 10;
+// Bluetooth Submenu - 9 items
+const int bluetooth_NUM_SUBMENU_ITEMS = 9;
 const char *bluetooth_submenu_items[bluetooth_NUM_SUBMENU_ITEMS] = {
     "BLE Jammer",
     "BLE Spoofer",
@@ -148,7 +150,6 @@ const char *bluetooth_submenu_items[bluetooth_NUM_SUBMENU_ITEMS] = {
     "WhisperPair",
     "AirTag",
     "Lunatic Fringe",
-    "BLE Ducky",
     "Back to Main Menu"
 };
 
@@ -161,7 +162,6 @@ const unsigned char *bluetooth_submenu_icons[bluetooth_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_eye,
     bitmap_icon_apple,
     bitmap_icon_scanner,
-    bitmap_icon_key,            // BLE Ducky - key icon
     bitmap_icon_go_back
 };
 
@@ -423,11 +423,11 @@ void displaySubmenu() {
     menu_initialized = false;
     last_menu_index = -1;
 
-    tft.setTextFont(2);
-    tft.setTextSize(TEXT_SIZE_BODY);
+    tft.setFreeFont(&JosefinSans_SemiBold15pt7b);
 
     if (!submenu_initialized) {
         tft.fillScreen(TFT_BLACK);
+        drawInoIconBar();  // Always-visible back button - reachable even if the list overflows
 
         for (int i = 0; i < active_submenu_size; i++) {
             int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
@@ -435,7 +435,7 @@ void displaySubmenu() {
 
             tft.setTextColor(HALEHOUND_MAGENTA, TFT_BLACK);
             tft.drawBitmap(10, yPos, active_submenu_icons[i], 16, 16, HALEHOUND_MAGENTA);
-            tft.setCursor(30, yPos);
+            tft.setCursor(30, yPos + 11);  // +11: GFX font baseline vs classic top-anchor
             if (i < active_submenu_size - 1) {
                 tft.print("| ");
             }
@@ -455,7 +455,7 @@ void displaySubmenu() {
 
             tft.setTextColor(HALEHOUND_MAGENTA, TFT_BLACK);
             tft.drawBitmap(10, prev_yPos, active_submenu_icons[last_submenu_index], 16, 16, HALEHOUND_MAGENTA);
-            tft.setCursor(30, prev_yPos);
+            tft.setCursor(30, prev_yPos + 11);
             if (last_submenu_index < active_submenu_size - 1) {
                 tft.print("| ");
             }
@@ -468,7 +468,7 @@ void displaySubmenu() {
 
         tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
         tft.drawBitmap(10, new_yPos, active_submenu_icons[current_submenu_index], 16, 16, HALEHOUND_HOTPINK);
-        tft.setCursor(30, new_yPos);
+        tft.setCursor(30, new_yPos + 11);
         if (current_submenu_index < active_submenu_size - 1) {
             tft.print("| ");
         }
@@ -477,6 +477,7 @@ void displaySubmenu() {
         last_submenu_index = current_submenu_index;
     }
 
+    tft.setFreeFont(NULL);  // Restore classic font for anything drawn after this
     drawStatusBar();
 }
 
@@ -487,15 +488,18 @@ void displaySubmenu() {
 void displayMenu() {
     submenu_initialized = false;
     last_submenu_index = -1;
-    tft.setTextFont(2);
-    tft.setTextSize(TEXT_SIZE_BODY);
+    tft.setFreeFont(&JosefinSans_SemiBold15pt7b);
 
     if (!menu_initialized) {
-        // Black background with skull in magenta
+        // Black background with the EVAWARE artwork as a watermark
         tft.fillScreen(TFT_BLACK);
 
-        // Flaming skulls watermark - pushed down behind menu
-        tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);  // Dark cyan watermark
+        // EVAWARE artwork watermark, pushed down behind menu
+        #ifdef CYD_35
+        tft.drawBitmap(0, 0, evaware_bg_35_bitmap, EVAWARE_BG_35_WIDTH, EVAWARE_BG_35_HEIGHT, 0x2945);
+        #else
+        tft.drawBitmap(0, 0, evaware_bg_28_bitmap, EVAWARE_BG_28_WIDTH, EVAWARE_BG_28_HEIGHT, 0x2945);
+        #endif
 
         // Draw menu buttons — left column (0-3): 4 items, right column (4-7): 4 items
         for (int i = 0; i < NUM_MENU_ITEMS; i++) {
@@ -508,9 +512,9 @@ void displayMenu() {
             tft.drawBitmap(x_position + MENU_ICON_OFFSET_X, y_position + 10, bitmap_icons[i], 16, 16, HALEHOUND_MAGENTA);
 
             tft.setTextColor(HALEHOUND_MAGENTA);
-            int textWidth = TEXT_CHAR_W * strlen(menu_items[i]);
+            int textWidth = tft.textWidth(menu_items[i]);
             int textX = x_position + (MENU_BTN_W - textWidth) / 2;
-            int textY = y_position + MENU_TEXT_OFFSET_Y;
+            int textY = y_position + MENU_TEXT_OFFSET_Y + 8;  // +8: GFX font baseline vs classic top-anchor
             tft.setCursor(textX, textY);
             tft.print(menu_items[i]);
         }
@@ -531,9 +535,9 @@ void displayMenu() {
                 tft.fillRoundRect(x_position, y_position, MENU_BTN_W, MENU_BTN_H, 5, TFT_BLACK);
                 tft.drawBitmap(x_position + MENU_ICON_OFFSET_X, y_position + 10, bitmap_icons[last_menu_index], 16, 16, HALEHOUND_MAGENTA);
                 tft.setTextColor(HALEHOUND_MAGENTA);
-                int textWidth = TEXT_CHAR_W * strlen(menu_items[last_menu_index]);
+                int textWidth = tft.textWidth(menu_items[last_menu_index]);
                 int textX = x_position + (MENU_BTN_W - textWidth) / 2;
-                int textY = y_position + MENU_TEXT_OFFSET_Y;
+                int textY = y_position + MENU_TEXT_OFFSET_Y + 8;
                 tft.setCursor(textX, textY);
                 tft.print(menu_items[last_menu_index]);
             }
@@ -548,14 +552,16 @@ void displayMenu() {
         // Selected button - hot pink icon and text (no border)
         tft.drawBitmap(x_position + MENU_ICON_OFFSET_X, y_position + 10, bitmap_icons[current_menu_index], 16, 16, HALEHOUND_HOTPINK);
         tft.setTextColor(HALEHOUND_HOTPINK);
-        int textWidth = TEXT_CHAR_W * strlen(menu_items[current_menu_index]);
+        int textWidth = tft.textWidth(menu_items[current_menu_index]);
         int textX = x_position + (MENU_BTN_W - textWidth) / 2;
-        int textY = y_position + MENU_TEXT_OFFSET_Y;
+        int textY = y_position + MENU_TEXT_OFFSET_Y + 8;
         tft.setCursor(textX, textY);
         tft.print(menu_items[current_menu_index]);
 
         last_menu_index = current_menu_index;
     }
+
+    tft.setFreeFont(NULL);  // Restore classic font before the Nosifer banner sets its own
 
     // VALHALLA / BLUE TEAM banner — bottom of home screen
     {
@@ -883,7 +889,7 @@ void handleBluetoothSubmenuTouch() {
             displaySubmenu();
             delay(200);
 
-            if (current_submenu_index == 9) { // Back
+            if (current_submenu_index == 8) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -987,22 +993,6 @@ void handleBluetoothSubmenuTouch() {
                         if (IS_BOOT_PRESSED()) feature_exit_requested = true;
                     }
                     LunaticFringe::cleanup();
-                    break;
-                case 8: // BLE Ducky
-                    if (!isOffensiveAllowed()) {
-                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
-                        else if (!showDisclaimerScreen()) break;
-                        if (!isOffensiveAllowed()) break;
-                    }
-                    BleDucky::setup();
-                    while (!feature_exit_requested) {
-                        BleDucky::loop();
-                        if (BleDucky::isExitRequested()) feature_exit_requested = true;
-                        touchButtonsUpdate();
-                        if (isBackButtonTapped()) feature_exit_requested = true;
-                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
-                    }
-                    BleDucky::cleanup();
                     break;
             }
 
@@ -2555,7 +2545,7 @@ void handleAboutPage() {
     tft.setCursor(col1, my); tft.print("> SubGHz");
     tft.setCursor(col2, my); tft.print("> NRF24");
     my += rowH;
-    tft.setCursor(col1, my); tft.print("> SIGINT");
+    tft.setCursor(col1, my); tft.print("> Recon");
     tft.setCursor(col2, my); tft.print("> GPS");
     my += rowH;
     tft.setCursor(col1, my); tft.print("> SD Card");

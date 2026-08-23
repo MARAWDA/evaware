@@ -463,7 +463,7 @@ static const unsigned char* spSkulls[SP_SKULL_NUM] = {
 #define SP_ICON_SIZE 16
 #define SP_ICON_NUM 6
 
-static const int spIconX[SP_ICON_NUM] = {10, 60, 105, 140, 180, 215};
+static const int spIconX[SP_ICON_NUM] = {10, SCALE_X(60), SCALE_X(105), SCALE_X(140), SCALE_X(180), SCALE_X(215)};
 static const unsigned char* spIcons[SP_ICON_NUM] = {
     bitmap_icon_go_back,           // 0: Back/Exit
     bitmap_icon_start,             // 1: Toggle spam ON/OFF
@@ -1332,22 +1332,22 @@ void loop() {
                 return;
             }
             // Toggle icon (x=60)
-            else if (tx >= 50 && tx <= 80) {
+            else if (tx >= SCALE_X(50) && tx <= SCALE_X(80)) {
                 toggleSpam();
                 return;
             }
             // Prev mode icon (x=105)
-            else if (tx >= 95 && tx <= 125) {
+            else if (tx >= SCALE_X(95) && tx <= SCALE_X(125)) {
                 prevMode();
                 return;
             }
             // Next mode icon (x=140)
-            else if (tx >= 130 && tx <= 160) {
+            else if (tx >= SCALE_X(130) && tx <= SCALE_X(160)) {
                 nextMode();
                 return;
             }
             // Prev device icon (x=180)
-            else if (tx >= 170 && tx <= 200) {
+            else if (tx >= SCALE_X(170) && tx <= SCALE_X(200)) {
                 prevDevice();
                 return;
             }
@@ -1572,7 +1572,7 @@ static esp_ble_adv_params_t bcnAdvParams = {
 #define BCN_ICON_SIZE 16
 #define BCN_ICON_NUM 4
 
-static const int bcnIconX[BCN_ICON_NUM] = {10, 70, 140, 200};
+static const int bcnIconX[BCN_ICON_NUM] = {10, SCALE_X(70), SCALE_X(140), SCALE_X(200)};
 static const unsigned char* bcnIcons[BCN_ICON_NUM] = {
     bitmap_icon_go_back,           // 0: Back/Exit
     bitmap_icon_start,             // 1: Toggle beacon ON/OFF
@@ -2201,17 +2201,17 @@ void loop() {
                 return;
             }
             // Toggle icon (x=70)
-            else if (tx >= 60 && tx <= 90) {
+            else if (tx >= SCALE_X(60) && tx <= SCALE_X(90)) {
                 toggleBeacon();
                 return;
             }
             // Prev mode icon (x=140)
-            else if (tx >= 130 && tx <= 160) {
+            else if (tx >= SCALE_X(130) && tx <= SCALE_X(160)) {
                 prevMode();
                 return;
             }
             // Next mode icon (x=200)
-            else if (tx >= 190 && tx <= 220) {
+            else if (tx >= SCALE_X(190) && tx <= SCALE_X(220)) {
                 nextMode();
                 return;
             }
@@ -2293,7 +2293,7 @@ static int deviceCount = 0;
 // Icon bar - MATCHES ORIGINAL (2 icons: undo at x=210, back at x=10)
 #define BSCAN_ICON_SIZE 16
 #define BSCAN_ICON_NUM 2
-static int bscanIconX[BSCAN_ICON_NUM] = {210, 10};
+static int bscanIconX[BSCAN_ICON_NUM] = {SCALE_X(210), 10};
 static int bscanIconY = ICON_BAR_Y;
 
 // Draw icon bar - MATCHES ORIGINAL ESP32-DIV
@@ -2524,7 +2524,7 @@ void loop() {
                     return;
                 }
                 // Undo/Rescan icon at x=210-226
-                else if (tx >= 210 && tx < 226) {
+                else if (tx >= SCALE_X(210) && tx < SCALE_X(210) + 16) {
                     startScan();
                     lastIconTap = millis();
                     return;
@@ -2766,7 +2766,7 @@ static void drawIconBar() {
     tft.drawLine(0, 19, SCREEN_WIDTH, 19, HALEHOUND_MAGENTA);
     tft.fillRect(0, 20, SCREEN_WIDTH, 16, HALEHOUND_GUNMETAL);
     tft.drawBitmap(10, 20, bitmap_icon_go_back, AT_ICON_SIZE, AT_ICON_SIZE, HALEHOUND_MAGENTA);
-    tft.drawBitmap(210, 20, bitmap_icon_undo, AT_ICON_SIZE, AT_ICON_SIZE, HALEHOUND_MAGENTA);
+    tft.drawBitmap(SCALE_X(210), 20, bitmap_icon_undo, AT_ICON_SIZE, AT_ICON_SIZE, HALEHOUND_MAGENTA);
     tft.drawLine(0, 36, SCREEN_WIDTH, 36, HALEHOUND_HOTPINK);
 }
 
@@ -3098,7 +3098,7 @@ void loop() {
                     lastIconTap = millis();
                     return;
                 }
-                else if (tx >= 210 && tx < 226) {
+                else if (tx >= SCALE_X(210) && tx < SCALE_X(210) + 16) {
                     runScan();
                     if (!detailView) drawTrackerList();
                     lastIconTap = millis();
@@ -3352,7 +3352,7 @@ static void tdDrawIconBar() {
     tft.drawLine(0, 19, SCREEN_WIDTH, 19, HALEHOUND_MAGENTA);
     tft.fillRect(0, 20, SCREEN_WIDTH, 16, HALEHOUND_GUNMETAL);
     tft.drawBitmap(10, 20, bitmap_icon_go_back, TD_ICON_SIZE, TD_ICON_SIZE, HALEHOUND_MAGENTA);
-    tft.drawBitmap(210, 20, bitmap_icon_undo, TD_ICON_SIZE, TD_ICON_SIZE, HALEHOUND_MAGENTA);
+    tft.drawBitmap(SCALE_X(210), 20, bitmap_icon_undo, TD_ICON_SIZE, TD_ICON_SIZE, HALEHOUND_MAGENTA);
     tft.drawLine(0, 36, SCREEN_WIDTH, 36, HALEHOUND_HOTPINK);
 }
 
@@ -3752,7 +3752,7 @@ void loop() {
                     lastIconTap = millis();
                     return;
                 }
-                else if (tx >= 210 && tx < 226) {
+                else if (tx >= SCALE_X(210) && tx < SCALE_X(210) + 16) {
                     tdRunScan();
                     if (!detailView) drawDeviceList();
                     lastIconTap = millis();
@@ -3899,7 +3899,7 @@ static void pfDrawIconBar() {
     // Back icon
     tft.drawBitmap(10, ICON_BAR_Y, bitmap_icon_go_back, 16, 16, HALEHOUND_MAGENTA);
     // Toggle icon
-    tft.drawBitmap(60, ICON_BAR_Y, bitmap_icon_start, 16, 16,
+    tft.drawBitmap(SCALE_X(60), ICON_BAR_Y, bitmap_icon_start, 16, 16,
                    flooding ? HALEHOUND_HOTPINK : HALEHOUND_MAGENTA);
     tft.drawLine(0, ICON_BAR_BOTTOM, SCREEN_WIDTH, ICON_BAR_BOTTOM, HALEHOUND_HOTPINK);
 }
@@ -4360,7 +4360,7 @@ void loop() {
                 exitRequested = true;
                 return;
             }
-            else if (tx >= 50 && tx <= 80) {
+            else if (tx >= SCALE_X(50) && tx <= SCALE_X(80)) {
                 toggleFlood();
                 return;
             }
@@ -4733,9 +4733,9 @@ static void arDrawIconBar() {
     // Back
     tft.drawBitmap(10, ICON_BAR_Y, bitmap_icon_go_back, 16, 16, HALEHOUND_MAGENTA);
     // Scan
-    tft.drawBitmap(60, ICON_BAR_Y, bitmap_icon_undo, 16, 16, HALEHOUND_MAGENTA);
+    tft.drawBitmap(SCALE_X(60), ICON_BAR_Y, bitmap_icon_undo, 16, 16, HALEHOUND_MAGENTA);
     // Play/Stop
-    tft.drawBitmap(110, ICON_BAR_Y, bitmap_icon_start, 16, 16,
+    tft.drawBitmap(SCALE_X(110), ICON_BAR_Y, bitmap_icon_start, 16, 16,
                    S->replaying ? HALEHOUND_HOTPINK : HALEHOUND_MAGENTA);
     tft.drawLine(0, ICON_BAR_BOTTOM, SCREEN_WIDTH, ICON_BAR_BOTTOM, HALEHOUND_HOTPINK);
 }
@@ -5196,7 +5196,7 @@ void loop() {
                     return;
                 }
                 // Scan button (x: 60-80)
-                else if (tx >= 50 && tx <= 80) {
+                else if (tx >= SCALE_X(50) && tx <= SCALE_X(80)) {
                     if (!S->replaying && S->pArScan) {
                         arDrawStatus("SCANNING...", HALEHOUND_MAGENTA);
                         runScan();
@@ -5209,7 +5209,7 @@ void loop() {
                     return;
                 }
                 // Play/Stop button (x: 110-130)
-                else if (tx >= 100 && tx <= 135) {
+                else if (tx >= SCALE_X(100) && tx <= SCALE_X(135)) {
                     if (S->tagCount > 0) {
                         // If no tag selected yet, auto-select current
                         if (!S->replaying) {
@@ -5565,7 +5565,7 @@ static const unsigned char* bjSkulls[] = {
 // ═══════════════════════════════════════════════════════════════════════════
 #define BJ_ICON_SIZE 16
 #define BJ_ICON_NUM  6
-static int bjIconX[BJ_ICON_NUM] = {10, 60, 105, 140, 180, 215};
+static int bjIconX[BJ_ICON_NUM] = {10, SCALE_X(60), SCALE_X(105), SCALE_X(140), SCALE_X(180), SCALE_X(215)};
 static const unsigned char* bjIcons[BJ_ICON_NUM] = {
     bitmap_icon_go_back,           // 0: Back
     bitmap_icon_start,             // 1: Toggle ON/OFF
@@ -6139,26 +6139,26 @@ void loop() {
                 return;
             }
             // Toggle icon (x=60)
-            else if (tx >= 50 && tx <= 80) {
+            else if (tx >= SCALE_X(50) && tx <= SCALE_X(80)) {
                 if (jamming) stopJamming(); else startJamming();
                 drawIconBar();
                 drawBjMainUI();
                 return;
             }
             // Prev mode icon (x=105)
-            else if (tx >= 95 && tx <= 125) {
+            else if (tx >= SCALE_X(95) && tx <= SCALE_X(125)) {
                 prevMode();
                 drawBjMainUI();
                 return;
             }
             // Next mode icon (x=140)
-            else if (tx >= 130 && tx <= 160) {
+            else if (tx >= SCALE_X(130) && tx <= SCALE_X(160)) {
                 nextMode();
                 drawBjMainUI();
                 return;
             }
             // Antenna icon (x=180) - visual indicator only
-            else if (tx >= 170 && tx <= 200) {
+            else if (tx >= SCALE_X(170) && tx <= SCALE_X(200)) {
                 return;
             }
             // Cycle mode icon at right edge
@@ -6291,7 +6291,7 @@ static uint8_t  pendingMfgLen = 0;
 // ── Icon bar ─────────────────────────────────────────────────────────────
 #define BSNIFF_ICON_SIZE 16
 #define BSNIFF_ICON_NUM 6
-static int bsniffIconX[BSNIFF_ICON_NUM] = {10, 55, 100, 135, 175, 215};
+static int bsniffIconX[BSNIFF_ICON_NUM] = {10, SCALE_X(55), SCALE_X(100), SCALE_X(135), SCALE_X(175), SCALE_X(215)};
 static const unsigned char* bsniffIcons[BSNIFF_ICON_NUM] = {
     bitmap_icon_go_back,     // 0: back
     bitmap_icon_start,       // 1: scan toggle
@@ -6613,18 +6613,18 @@ static void drawColumnHeaders() {
 }
 
 static void drawDeviceList() {
-    tft.fillRect(0, 74, SCREEN_WIDTH, 199, HALEHOUND_BLACK);
+    tft.fillRect(0, SCALE_Y(74), SCREEN_WIDTH, SCALE_H(199), HALEHOUND_BLACK);
 
     if (deviceCount == 0) {
         tft.setTextColor(HALEHOUND_GUNMETAL);
         tft.setTextSize(1);
-        tft.setCursor(40, 140);
+        tft.setCursor(SCALE_X(40), SCALE_Y(140));
         tft.print("Scanning for devices...");
         return;
     }
 
     uint32_t now = millis();
-    int y = 74;
+    int y = SCALE_Y(74);
     int visibleIdx = 0;
     int drawn = 0;
     int skipped = 0;
@@ -6659,7 +6659,7 @@ static void drawDeviceList() {
 
         // Highlight selected row background
         if (visibleIdx + listStartIndex == currentIndex) {
-            tft.fillRect(0, y, SCREEN_WIDTH, BSNIFF_ITEM_HEIGHT - 2, HALEHOUND_DARK);
+            tft.fillRect(0, y, SCREEN_WIDTH, SCALE_H(BSNIFF_ITEM_HEIGHT) - 2, HALEHOUND_DARK);
         }
 
         tft.setTextColor(rowColor);
@@ -6669,19 +6669,19 @@ static void drawDeviceList() {
         char macStr[10];
         snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X",
                  d->mac[3], d->mac[4], d->mac[5]);
-        tft.setCursor(5, y + 4);
+        tft.setCursor(SCALE_X(5), y + 4);
         tft.print(macStr);
 
         // RSSI
-        tft.setCursor(80, y + 4);
+        tft.setCursor(SCALE_X(80), y + 4);
         tft.printf("%d", d->rssi);
 
         // Type (company name from ble_database.h)
-        tft.setCursor(115, y + 4);
+        tft.setCursor(SCALE_X(115), y + 4);
         tft.print(devDisplayLabel(d->companyId, d->hasName));
 
         // Vendor
-        tft.setCursor(170, y + 4);
+        tft.setCursor(SCALE_X(170), y + 4);
         tft.print(d->vendor);
 
         // Frame count indicator (small dot for active devices)
@@ -6689,14 +6689,14 @@ static void drawDeviceList() {
             tft.fillCircle(SCREEN_WIDTH - 5, y + 8, 2, HALEHOUND_HOTPINK);
         }
 
-        y += BSNIFF_ITEM_HEIGHT;
+        y += SCALE_H(BSNIFF_ITEM_HEIGHT);
         drawn++;
         visibleIdx++;
     }
 }
 
 static void drawStatsLine() {
-    tft.fillRect(0, 273, SCREEN_WIDTH, 10, HALEHOUND_BLACK);
+    tft.fillRect(0, SCALE_Y(273), SCREEN_WIDTH, SCALE_H(10), HALEHOUND_BLACK);
     tft.setTextSize(1);
     tft.setTextColor(HALEHOUND_MAGENTA, HALEHOUND_BLACK);
 
@@ -6705,50 +6705,50 @@ static void drawStatsLine() {
     uint32_t mins = elapsed / 60;
     uint32_t secs = elapsed % 60;
 
-    tft.setCursor(5, 274);
+    tft.setCursor(SCALE_X(5), SCALE_Y(274));
     tft.printf("T:%d F:%d", deviceCount, filtered);
 
     tft.setTextColor(HALEHOUND_VIOLET, HALEHOUND_BLACK);
-    tft.setCursor(160, 274);
+    tft.setCursor(SCALE_X(160), SCALE_Y(274));
     tft.printf("%02d:%02d", mins, secs);
 
-    tft.fillRect(200, 274, 40, 8, HALEHOUND_BLACK);
+    tft.fillRect(SCALE_X(200), SCALE_Y(274), SCALE_W(40), SCALE_H(8), HALEHOUND_BLACK);
     if (scanning) {
         tft.setTextColor(HALEHOUND_MAGENTA, HALEHOUND_BLACK);
-        tft.setCursor(210, 274);
+        tft.setCursor(SCALE_X(210), SCALE_Y(274));
         tft.print("LIVE");
     } else {
         tft.setTextColor(HALEHOUND_GUNMETAL, HALEHOUND_BLACK);
-        tft.setCursor(200, 274);
+        tft.setCursor(SCALE_X(200), SCALE_Y(274));
         tft.print("PAUSE");
     }
 }
 
 static void drawButtonBar() {
-    tft.fillRect(0, 283, SCREEN_WIDTH, 37, HALEHOUND_GUNMETAL);
+    tft.fillRect(0, SCALE_Y(283), SCREEN_WIDTH, SCALE_H(37), HALEHOUND_GUNMETAL);
 
     // BACK button (x=5-42)
-    tft.fillRect(5, 288, 37, 25, HALEHOUND_DARK);
-    tft.drawRect(5, 288, 37, 25, HALEHOUND_MAGENTA);
+    tft.fillRect(SCALE_X(5), SCALE_Y(288), SCALE_W(37), SCALE_H(25), HALEHOUND_DARK);
+    tft.drawRect(SCALE_X(5), SCALE_Y(288), SCALE_W(37), SCALE_H(25), HALEHOUND_MAGENTA);
     tft.setTextColor(HALEHOUND_MAGENTA);
     tft.setTextSize(1);
-    tft.setCursor(8, 296);
+    tft.setCursor(SCALE_X(8), SCALE_Y(296));
     tft.print("BACK");
 
     // INFO button (x=47-82)
     uint16_t infoColor = (deviceCount > 0) ? HALEHOUND_MAGENTA : HALEHOUND_GUNMETAL;
-    tft.fillRect(47, 288, 35, 25, HALEHOUND_DARK);
-    tft.drawRect(47, 288, 35, 25, infoColor);
+    tft.fillRect(SCALE_X(47), SCALE_Y(288), SCALE_W(35), SCALE_H(25), HALEHOUND_DARK);
+    tft.drawRect(SCALE_X(47), SCALE_Y(288), SCALE_W(35), SCALE_H(25), infoColor);
     tft.setTextColor(infoColor);
-    tft.setCursor(52, 296);
+    tft.setCursor(SCALE_X(52), SCALE_Y(296));
     tft.print("INFO");
 
     // PREV button (x=87-117)
     uint16_t prevColor = (listStartIndex > 0) ? HALEHOUND_MAGENTA : HALEHOUND_GUNMETAL;
-    tft.fillRect(87, 288, 30, 25, HALEHOUND_DARK);
-    tft.drawRect(87, 288, 30, 25, prevColor);
+    tft.fillRect(SCALE_X(87), SCALE_Y(288), SCALE_W(30), SCALE_H(25), HALEHOUND_DARK);
+    tft.drawRect(SCALE_X(87), SCALE_Y(288), SCALE_W(30), SCALE_H(25), prevColor);
     tft.setTextColor(prevColor);
-    tft.setCursor(92, 296);
+    tft.setCursor(SCALE_X(92), SCALE_Y(296));
     tft.print("PRV");
 
     // Page indicator (x=120-160)
@@ -6756,24 +6756,24 @@ static void drawButtonBar() {
     int totalPages = (filtered + BSNIFF_MAX_VISIBLE - 1) / BSNIFF_MAX_VISIBLE;
     if (totalPages < 1) totalPages = 1;
     int curPage = (listStartIndex / BSNIFF_MAX_VISIBLE) + 1;
-    tft.fillRect(120, 288, 40, 25, HALEHOUND_DARK);
+    tft.fillRect(SCALE_X(120), SCALE_Y(288), SCALE_W(40), SCALE_H(25), HALEHOUND_DARK);
     tft.setTextColor(HALEHOUND_HOTPINK);
-    tft.setCursor(127, 296);
+    tft.setCursor(SCALE_X(127), SCALE_Y(296));
     tft.printf("%d/%d", curPage, totalPages);
 
     // NEXT button (x=163-193)
     uint16_t nextColor = (listStartIndex + BSNIFF_MAX_VISIBLE < filtered) ? HALEHOUND_MAGENTA : HALEHOUND_GUNMETAL;
-    tft.fillRect(163, 288, 30, 25, HALEHOUND_DARK);
-    tft.drawRect(163, 288, 30, 25, nextColor);
+    tft.fillRect(SCALE_X(163), SCALE_Y(288), SCALE_W(30), SCALE_H(25), HALEHOUND_DARK);
+    tft.drawRect(SCALE_X(163), SCALE_Y(288), SCALE_W(30), SCALE_H(25), nextColor);
     tft.setTextColor(nextColor);
-    tft.setCursor(168, 296);
+    tft.setCursor(SCALE_X(168), SCALE_Y(296));
     tft.print("NXT");
 
     // CLR button (x=198-233)
-    tft.fillRect(198, 288, 35, 25, HALEHOUND_DARK);
-    tft.drawRect(198, 288, 35, 25, HALEHOUND_HOTPINK);
+    tft.fillRect(SCALE_X(198), SCALE_Y(288), SCALE_W(35), SCALE_H(25), HALEHOUND_DARK);
+    tft.drawRect(SCALE_X(198), SCALE_Y(288), SCALE_W(35), SCALE_H(25), HALEHOUND_HOTPINK);
     tft.setTextColor(HALEHOUND_HOTPINK);
-    tft.setCursor(205, 296);
+    tft.setCursor(SCALE_X(205), SCALE_Y(296));
     tft.print("CLR");
 }
 
@@ -6902,11 +6902,11 @@ static void showDeviceDetail(int idx) {
     }
 
     // Close button
-    y = 260;
-    tft.fillRect(85, y, 70, 18, HALEHOUND_DARK);
-    tft.drawRect(85, y, 70, 18, HALEHOUND_MAGENTA);
+    y = tft.height() - 60;
+    tft.fillRect(SCALE_X(85), y, SCALE_W(70), 18, HALEHOUND_DARK);
+    tft.drawRect(SCALE_X(85), y, SCALE_W(70), 18, HALEHOUND_MAGENTA);
     tft.setTextColor(HALEHOUND_MAGENTA);
-    tft.setCursor(100, y + 4);
+    tft.setCursor(SCALE_X(100), y + 4);
     tft.print("CLOSE");
 }
 
@@ -6935,8 +6935,9 @@ static void handleTouch() {
 
     // ── Detail view: ONLY close via CLOSE button or back icon ────────────
     if (detailView) {
-        // CLOSE button (x=85-155, y=255-280)
-        if (ty >= 255 && ty <= 280 && tx >= 80 && tx <= 160) {
+        // CLOSE button — anchored to bottom of the overlay, matches showDeviceDetail()
+        int closeY = tft.height() - 60;
+        if (ty >= closeY - 5 && ty <= closeY + 23 && tx >= SCALE_X(80) && tx <= SCALE_X(160)) {
             detailView = false;
             waitForRelease = true;
             drawFullUI();
@@ -7008,9 +7009,9 @@ static void handleTouch() {
         return;
     }
 
-    // ── Device list area (y=74-272): tap to select ───────────────────────
-    if (ty >= 74 && ty < 273 && deviceCount > 0) {
-        int tappedRow = (ty - 74) / BSNIFF_ITEM_HEIGHT;
+    // ── Device list area: tap to select ───────────────────────
+    if (ty >= SCALE_Y(74) && ty < SCALE_Y(273) && deviceCount > 0) {
+        int tappedRow = (ty - SCALE_Y(74)) / SCALE_H(BSNIFF_ITEM_HEIGHT);
         int newIdx = listStartIndex + tappedRow;
         int filtered = countFiltered();
         if (newIdx < filtered) {
@@ -7021,16 +7022,16 @@ static void handleTouch() {
         return;
     }
 
-    // ── Button bar (y=283-318) ───────────────────────────────────────────
-    if (ty >= 283) {
+    // ── Button bar ───────────────────────
+    if (ty >= SCALE_Y(283)) {
         waitForRelease = true;
-        if (tx >= 5 && tx < 42) {
+        if (tx >= SCALE_X(5) && tx < SCALE_X(42)) {
             // BACK
             exitRequested = true;
-        } else if (tx >= 47 && tx < 82) {
+        } else if (tx >= SCALE_X(47) && tx < SCALE_X(82)) {
             // INFO
             if (deviceCount > 0) showDeviceDetail(currentIndex);
-        } else if (tx >= 87 && tx < 117) {
+        } else if (tx >= SCALE_X(87) && tx < SCALE_X(117)) {
             // PREV
             if (listStartIndex >= BSNIFF_MAX_VISIBLE) {
                 listStartIndex -= BSNIFF_MAX_VISIBLE;
@@ -7038,7 +7039,7 @@ static void handleTouch() {
                 drawDeviceList();
                 drawButtonBar();
             }
-        } else if (tx >= 163 && tx < 193) {
+        } else if (tx >= SCALE_X(163) && tx < SCALE_X(193)) {
             // NEXT
             int filtered = countFiltered();
             if (listStartIndex + BSNIFF_MAX_VISIBLE < filtered) {
@@ -7047,7 +7048,7 @@ static void handleTouch() {
                 drawDeviceList();
                 drawButtonBar();
             }
-        } else if (tx >= 198 && tx < 233) {
+        } else if (tx >= SCALE_X(198) && tx < SCALE_X(233)) {
             // CLR
             deviceCount = 0;
             currentIndex = 0;
@@ -7274,7 +7275,7 @@ static BLEUUID wpFpUUID128("0000fe2c-0000-1000-8000-00805f9b34fb");
 static BLEUUID wpKbpUUID("fe2c1234-8366-4814-8eb0-01de32100bea");
 
 // Icon bar
-static int wpIconX[2] = {210, 10};
+static int wpIconX[2] = {SCALE_X(210), 10};
 static int wpIconY = 20;
 
 // Attack-phase UUIDs created as locals in wpRunAttack() to save DRAM
@@ -7376,7 +7377,7 @@ static void wpDrawHeader() {
     tft.fillRect(0, 20, SCREEN_WIDTH, 16, HALEHOUND_DARK);
     tft.drawBitmap(wpIconX[0], wpIconY, bitmap_icon_undo, 16, 16, HALEHOUND_MAGENTA);
     tft.drawBitmap(wpIconX[1], wpIconY, bitmap_icon_go_back, 16, 16, HALEHOUND_MAGENTA);
-    tft.drawBitmap(112, wpIconY, bitmap_icon_sdcard, 16, 16, HALEHOUND_MAGENTA);
+    tft.drawBitmap(SCALE_X(112), wpIconY, bitmap_icon_sdcard, 16, 16, HALEHOUND_MAGENTA);
     tft.drawLine(0, 36, SCREEN_WIDTH, 36, HALEHOUND_HOTPINK);
     // Nosifer glitch title — chromatic aberration effect
     drawGlitchTitle(55, "WHISPERPAIR");
@@ -8638,7 +8639,7 @@ void loop() {
                     lastTap = millis();
                     return;
                 }
-                else if (tx >= 96 && tx < 144) {
+                else if (tx >= SCALE_X(96) && tx < SCALE_X(144)) {
                     // Loot viewer icon — accessible from device list and attack result
                     if (!inAttack && (!inResult || inAttackResult)) {
                         inLootViewer = true;
@@ -8647,7 +8648,7 @@ void loop() {
                         return;
                     }
                 }
-                else if (tx >= 210 && tx < 226) {
+                else if (tx >= SCALE_X(210) && tx < SCALE_X(210) + 16) {
                     // Rescan icon
                     if (!inResult && !inAttackResult) {
                         wpDoScan();

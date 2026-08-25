@@ -18,6 +18,7 @@
 #include "utils.h"
 #include "touch_buttons.h"
 #include "icon.h"
+#include "nrf24_config.h"
 #include <TinyGPSPlus.h>
 
 #ifndef DEG_TO_RAD
@@ -615,6 +616,13 @@ static uint32_t tryGPSPin(int pin, int baud, int timeoutMs) {
 void gpsSetup() {
     if (gpsInitialized) return;
 
+    // Temporarily force NRF24 to LOW power to free 3.3V rail for GPS lock
+    // (both share the same LDO; max RF TX starves GPS satellite detection)
+    bool savedNrf24Power = nrf24_power_high;
+    if (nrf24IsActive()) {
+        nrf24SetPower(RF24_PA_LOW);
+    }
+
     memset(&currentData, 0, sizeof(currentData));
     currentData.valid = false;
 
@@ -690,6 +698,11 @@ void gpsSetup() {
 
     delay(1500);
     gpsInitialized = true;
+
+    // Restore NRF24 power level to pre-scan setting
+    if (nrf24IsActive() && savedNrf24Power) {
+        nrf24SetPower(RF24_PA_HIGH);
+    }
 }
 
 void gpsUpdate() {

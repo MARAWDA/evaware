@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "icon.h"
 #include "skull_bg.h"
+#include "rei_bg.h"
 #include "nuke_icon.h"
 #include "wardriving.h"
 #include "gps_module.h"
@@ -474,6 +475,7 @@ static void drawUI() {
     // ═══════════════════════════════════════════════════════════════════════
     // Skull splatter watermark - full screen
     tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0041);  // Dark cyan watermark
+    tft.drawBitmap(0, 0, rei_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);   // Rei watermark, dim navy so it stays behind the FFT/text
 }
 
 // Glitch title splash - shown on entry, FFT overwrites it during operation

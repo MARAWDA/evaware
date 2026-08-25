@@ -50,6 +50,7 @@
 #include "bluetooth_attacks.h"
 #include "nrf24_config.h"
 #include "nrf24_attacks.h"
+#include "jam_detect.h"
 #include "badusb_attacks.h"
 #include "gps_module.h"
 #include "serial_monitor.h"
@@ -181,8 +182,8 @@ static const unsigned char * const airtag_submenu_icons_flash[] = {
     bitmap_icon_go_back
 };
 
-// NRF24 2.4GHz Submenu - 7 items
-const int nrf_NUM_SUBMENU_ITEMS = 7;
+// NRF24 2.4GHz Submenu - 9 items
+const int nrf_NUM_SUBMENU_ITEMS = 9;
 const char *nrf_submenu_items[nrf_NUM_SUBMENU_ITEMS] = {
     "Scanner",
     "Spectrum Analyzer",
@@ -190,6 +191,8 @@ const char *nrf_submenu_items[nrf_NUM_SUBMENU_ITEMS] = {
     "MouseJack",
     "WLAN Jammer",
     "Proto Kill",
+    "WiFi Guardian",
+    "2.4GHz Watchdog",
     "Back to Main Menu"
 };
 
@@ -200,6 +203,8 @@ const unsigned char *nrf_submenu_icons[nrf_NUM_SUBMENU_ITEMS] = {
     bitmap_icon_nuke,           // MouseJack - nuke icon
     bitmap_icon_wifi_jammer,
     bitmap_icon_skull_jammer,   // Proto Kill - skull jammer icon
+    bitmap_icon_skull_wifi,     // WiFi Guardian - defensive, deauth/beacon detection
+    bitmap_icon_stat,           // 2.4GHz Watchdog - defensive, NRF24 RPD occupancy
     bitmap_icon_go_back
 };
 
@@ -1143,7 +1148,7 @@ void handleNRFSubmenuTouch() {
             displaySubmenu();
             delay(200);
 
-            if (current_submenu_index == 6) { // Back
+            if (current_submenu_index == 8) { // Back
                 returnToMainMenu();
                 return;
             }
@@ -1233,6 +1238,24 @@ void handleNRFSubmenuTouch() {
                         if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
                     }
                     ProtoKill::cleanup();
+                    break;
+                case 6: // WiFi Guardian (defensive — no offensive gate)
+                    WiFiGuardian::setup();
+                    while (!feature_exit_requested) {
+                        WiFiGuardian::loop();
+                        if (WiFiGuardian::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    WiFiGuardian::cleanup();
+                    break;
+                case 7: // 2.4GHz Watchdog (defensive — no offensive gate)
+                    GHzWatchdog::setup();
+                    while (!feature_exit_requested) {
+                        GHzWatchdog::loop();
+                        if (GHzWatchdog::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    GHzWatchdog::cleanup();
                     break;
             }
 

@@ -324,8 +324,16 @@
   // NM-RF-Hat: physical switch selects CC1101 or NRF24 on same two GPIOs
   #define NRF24_CSN     27    // Shared with CC1101_CS via hat switch
   #define NRF24_CE      22    // Shared with CC1101_GDO0 via hat switch
-#elif defined(CYD_E32R28T) || defined(CYD_E32R35T)
-  // E32R28T/E32R35T: GPIO 4 used for CC1101_TX_EN (amp enable), NRF24_CSN moves to GPIO 26
+#elif defined(CYD_35)
+  // E32R35T: GPIO 26 (DAC pad) is hard to reach without soldering, so if you
+  // aren't using the CC1101 SubGHz radio, NRF24_CSN can reuse GPIO 21 instead
+  // (normally CC1101_CS) — it's exposed on the SPI peripheral connector.
+  // NOTE: only safe if CC1101 is NOT wired — both would fight over GPIO 21.
+  #define NRF24_CSN     21    // Chip Select - SPI peripheral connector (reused from CC1101_CS)
+  #define NRF24_CE      16    // Chip Enable - RGB Green pad
+  #define NRF24_IRQ     17    // Interrupt - RGB Blue pad (shared with PN532_CS)
+#elif defined(CYD_E32R28T)
+  // E32R28T: GPIO 4 used for CC1101_TX_EN (amp enable), NRF24_CSN moves to GPIO 26
   // GPIO 26 = DAC pad — coupling cap to SC8002B amp input (amp shut down = tiny load)
   #define NRF24_CSN     26    // Chip Select - DAC/speaker pad (amp dead)
   #define NRF24_CE      16    // Chip Enable - RGB Green pad

@@ -265,7 +265,7 @@ const char *settings_submenu_items[settings_NUM_SUBMENU_ITEMS] = {
     "Rotation",
     "Device Info",
     "Set PIN",
-    "CC1101 Module",
+    "NRF24 Power",
     "Back to Main Menu"
 };
 
@@ -318,6 +318,9 @@ bool blue_team_mode = false;        // VALHALLA blue team mode active (persisted
 
 // CC1101 PA Module — E07-433M20S support (TX_EN/RX_EN control)
 bool cc1101_pa_module = false;      // E07 PA module active (persisted in EEPROM)
+
+// NRF24 Power Level — swap between HIGH (better range) and LOW (more stable on weak power)
+bool nrf24_power_high = true;       // true = RF24_PA_HIGH, false = RF24_PA_LOW (persisted in EEPROM)
 
 // Timeout option tables
 const int timeoutOptions[] = {30, 60, 120, 300, 600, 0};
@@ -1979,16 +1982,16 @@ void displayRotationScreen() {
     const char* rotNames[] = {"Standard", "Landscape CW", "Flipped 180", "Landscape CCW"};
     tft.print(rotNames[screen_rotation]);
 
-    // 4 rotation options — compact layout
-    const uint8_t rotVals[] = {0, 2, 1, 3};
-    const char* rotLabels[] = {"Standard", "Flipped 180", "90 CW", "90 CCW"};
-    const char* rotDescs[] = {"USB at bottom", "USB at top", "USB at left", "USB at right"};
+    // 2 rotation options only — landscape (90 CW/CCW) isn't supported by this UI's fixed portrait layout
+    const uint8_t rotVals[] = {0, 2};
+    const char* rotLabels[] = {"Standard", "Flipped 180"};
+    const char* rotDescs[] = {"USB at bottom", "USB at top"};
     int boxW = sw - 40;
     int boxH = 35;
     int startY = 88;
     int gap = 4;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) {
         int y = startY + i * (boxH + gap);
         uint16_t col = (screen_rotation == rotVals[i]) ? HALEHOUND_HOTPINK : HALEHOUND_MAGENTA;
         tft.drawRect(20, y, boxW, boxH, col);
@@ -2003,7 +2006,7 @@ void displayRotationScreen() {
     }
 
     // Info text
-    int infoY = startY + 4 * (boxH + gap) + 4;
+    int infoY = startY + 2 * (boxH + gap) + 4;
     tft.setTextColor(HALEHOUND_VIOLET);
     tft.setTextSize(1);
     tft.setCursor(15, infoY);
@@ -2037,7 +2040,7 @@ void rotationControlLoop() {
     int boxH = 35;
     int startY = 88;
     int gap = 4;
-    const uint8_t rotVals[] = {0, 2, 1, 3};
+    const uint8_t rotVals[] = {0, 2};
 
     while (!feature_exit_requested) {
         touchButtonsUpdate();
@@ -2047,8 +2050,8 @@ void rotationControlLoop() {
             break;
         }
 
-        // Check all 4 rotation buttons
-        for (int i = 0; i < 4; i++) {
+        // Check both rotation buttons
+        for (int i = 0; i < 2; i++) {
             int y = startY + i * (boxH + gap);
             if (isTouchInArea(20, y, boxW, boxH)) {
                 if (screen_rotation != rotVals[i]) {
@@ -2384,15 +2387,15 @@ void displayDeviceInfo() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CC1101 MODULE TYPE (Standard HW-863 / E07-433M20S PA)
+// NRF24 POWER LEVEL (HIGH = better range, LOW = more stable on weak power)
 // ═══════════════════════════════════════════════════════════════════════════
 
-void displayCC1101ModuleScreen() {
+void displayNRF24PowerScreen() {
     tft.fillScreen(TFT_BLACK);
     drawStatusBar();
     drawInoIconBar();
 
-    drawGlitchTitle(60, "CC1101");
+    drawGlitchTitle(60, "NRF24 POWER");
 
     int sw = tft.width();
     int boxX = 20;
@@ -2402,7 +2405,7 @@ void displayCC1101ModuleScreen() {
     tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(50), 6, HALEHOUND_MAGENTA);
     tft.setTextSize(2);
     tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
-    const char* modeLabel = cc1101_pa_module ? "E07 PA *" : "STANDARD";
+    const char* modeLabel = nrf24_power_high ? "HIGH" : "LOW";
     int modeTw = strlen(modeLabel) * 12;
     tft.setCursor((sw - modeTw) / 2, SCALE_Y(108));
     tft.print(modeLabel);
@@ -2410,22 +2413,20 @@ void displayCC1101ModuleScreen() {
     // Description
     tft.setTextSize(1);
     tft.setTextColor(HALEHOUND_GUNMETAL);
-    if (cc1101_pa_module) {
+    if (nrf24_power_high) {
         tft.setCursor(boxX, SCALE_Y(160));
-        tft.print("E07-433M20S (20dBm PA)");
+        tft.print("Best range / signal strength");
         tft.setCursor(boxX, SCALE_Y(172));
-        tft.print("TX_EN=GPIO26  RX_EN=GPIO0");
-        tft.setCursor(boxX, SCALE_Y(192));
-        tft.print("* = PA control pins active");
+        tft.print("Higher current draw — may");
+        tft.setCursor(boxX, SCALE_Y(184));
+        tft.print("brownout on weak power/wiring");
     } else {
         tft.setCursor(boxX, SCALE_Y(160));
-        tft.print("Standard CC1101 (HW-863)");
+        tft.print("Reduced range / signal strength");
         tft.setCursor(boxX, SCALE_Y(172));
-        tft.print("No PA control needed.");
-        tft.setCursor(boxX, SCALE_Y(192));
-        tft.print("Select E07 PA if using the");
-        tft.setCursor(boxX, SCALE_Y(204));
-        tft.print("E07-433M20S module.");
+        tft.print("Lower current draw — most");
+        tft.setCursor(boxX, SCALE_Y(184));
+        tft.print("stable on flaky NRF24 modules");
     }
 
     // Toggle button
@@ -2440,8 +2441,8 @@ void displayCC1101ModuleScreen() {
     tft.print("TOGGLE");
 }
 
-void cc1101ModuleLoop() {
-    displayCC1101ModuleScreen();
+void nrf24PowerLoop() {
+    displayNRF24PowerScreen();
 
     int btnX = 50;
     int btnW = tft.width() - 100;
@@ -2457,25 +2458,16 @@ void cc1101ModuleLoop() {
 
         // Toggle button
         if (isTouchInArea(btnX, SCALE_Y(230), btnW, SCALE_H(45))) {
-            cc1101_pa_module = !cc1101_pa_module;
+            nrf24_power_high = !nrf24_power_high;
 
-            // Apply PA pin config immediately
-            #if defined(CC1101_TX_EN) && defined(CC1101_RX_EN)
-            if (cc1101_pa_module) {
-                pinMode(CC1101_TX_EN, OUTPUT);
-                pinMode(CC1101_RX_EN, OUTPUT);
-                digitalWrite(CC1101_TX_EN, LOW);
-                digitalWrite(CC1101_RX_EN, HIGH);  // RX mode default — keeps GPIO0 HIGH (BOOT safe)
-                Serial.println("[CC1101] PA module enabled — TX_EN/RX_EN pins active");
-            } else {
-                digitalWrite(CC1101_TX_EN, LOW);
-                pinMode(CC1101_RX_EN, INPUT_PULLUP);  // Return to BOOT button mode
-                Serial.println("[CC1101] PA module disabled — standard mode");
+            // Apply immediately if the radio is currently active
+            if (nrf24IsActive()) {
+                nrf24SetPower(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
             }
-            #endif
+            Serial.printf("[NRF24] Power level set to %s\n", nrf24_power_high ? "HIGH" : "LOW");
 
             saveSettings();
-            displayCC1101ModuleScreen();
+            displayNRF24PowerScreen();
             delay(300);
         }
 
@@ -2538,8 +2530,8 @@ void handleSettingsSubmenuTouch() {
                 case 8: // Set PIN
                     pinSetupLoop();
                     break;
-                case 9: // CC1101 Module Type
-                    cc1101ModuleLoop();
+                case 9: // NRF24 Power Level
+                    nrf24PowerLoop();
                     break;
             }
 
@@ -2600,10 +2592,10 @@ void handleAboutPage() {
     tft.setCursor(col1, my); tft.print("> WiFi");
     tft.setCursor(col2, my); tft.print("> Bluetooth");
     my += rowH;
-    tft.setCursor(col1, my); tft.print("> SubGHz");
     tft.setCursor(col1, my); tft.print("> Recon");
+    tft.setCursor(col2, my); tft.print("> blu usp");
     my += rowH;
-    tft.setCursor(col2, my); tft.print("> Serial Mon");
+    tft.setCursor(col1, my); tft.print("> Serial Mon");
     tft.setCursor(col2, my); tft.print("> GPS");
     my += rowH;
     tft.setCursor(col1, my); tft.print("> SD Card");

@@ -102,7 +102,7 @@ bool nrf24Setup() {
     }
 
     // Default configuration
-    nrf24Radio.setPALevel(RF24_PA_MAX);
+    nrf24Radio.setPALevel(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
     nrf24Radio.setDataRate(RF24_1MBPS);
     nrf24Radio.setChannel(76);
     nrf24Radio.setAutoAck(false);
@@ -253,7 +253,7 @@ bool nrf24InjectKeystroke(uint8_t key, uint8_t modifiers) {
     nrf24Radio.setAutoAck(false);
     nrf24Radio.setDataRate(RF24_2MBPS);
     nrf24Radio.setCRCLength(RF24_CRC_16);   // Logitech requires 16-bit CRC
-    nrf24Radio.setPALevel(RF24_PA_MAX);
+    nrf24Radio.setPALevel(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
     nrf24Radio.setPayloadSize(10);
     nrf24Radio.openWritingPipe(mouseJackerTarget);
 
@@ -473,7 +473,7 @@ void nrf24ExitPromiscuous() {
 
     // Restore RF24 library control — re-init with normal settings
     nrf24Radio.begin();
-    nrf24Radio.setPALevel(RF24_PA_MAX);
+    nrf24Radio.setPALevel(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
     nrf24Radio.setDataRate(RF24_1MBPS);
     nrf24Radio.setChannel(76);
     nrf24Radio.setAutoAck(false);
@@ -554,7 +554,7 @@ void nrf24StartBLESpam(BLESpamType type) {
     nrf24Radio.setPayloadSize(32);
     nrf24Radio.setDataRate(RF24_1MBPS);
     nrf24Radio.disableCRC();
-    nrf24Radio.setPALevel(RF24_PA_MAX);
+    nrf24Radio.setPALevel(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
     nrf24Radio.stopListening();
 
     #if CYD_DEBUG
@@ -610,7 +610,7 @@ void nrf24StartJammer(uint8_t channel) {
     jammerChannel = channel;
 
     nrf24Radio.stopListening();
-    nrf24Radio.setPALevel(RF24_PA_MAX);
+    nrf24Radio.setPALevel(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
     nrf24Radio.setDataRate(RF24_2MBPS);
     nrf24Radio.setAutoAck(false);
     nrf24Radio.setPayloadSize(32);

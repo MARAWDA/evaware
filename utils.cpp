@@ -343,7 +343,7 @@ String getElapsedTimeString(uint32_t startMillis) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #define EEPROM_SIZE 512
-#define EEPROM_MAGIC 0xCD0A   // Bumped from 0xCD09 — added theme_eva02 (Classic/EVA-02 toggle)
+#define EEPROM_MAGIC 0xCD0B   // Bumped from 0xCD0A — added nrf24PowerHigh (HIGH/LOW toggle)
 
 // Globals defined in HaleHound-CYD.ino
 extern int brightness_level;
@@ -379,6 +379,7 @@ struct Settings {
     uint8_t blueTeamMode;      // 0 = normal, 1 = blue team (defensive only)
     uint8_t cc1101PaModule;    // 0 = standard HW-863, 1 = E07-433M20S PA module
     uint8_t themeEva02;        // 0 = Classic (pink/purple), 1 = EVA-02 (red/orange)
+    uint8_t nrf24PowerHigh;    // 0 = RF24_PA_LOW, 1 = RF24_PA_HIGH
 };
 
 static Settings settings;
@@ -411,6 +412,7 @@ void saveSettings() {
     settings.blueTeamMode = blue_team_mode ? 1 : 0;
     settings.cc1101PaModule = cc1101_pa_module ? 1 : 0;
     settings.themeEva02 = theme_eva02 ? 1 : 0;
+    settings.nrf24PowerHigh = nrf24_power_high ? 1 : 0;
 
     EEPROM.begin(EEPROM_SIZE);
     EEPROM.put(0, settings);
@@ -451,6 +453,7 @@ void loadSettings() {
         settings.blueTeamMode = 0;     // Normal mode (not blue team)
         settings.cc1101PaModule = 0;   // Standard CC1101 (no PA control)
         settings.themeEva02 = 1;       // EVA-02 theme by default
+        settings.nrf24PowerHigh = 1;   // HIGH by default
 
         // Apply defaults to globals so they're not left uninitialized
         brightness_level = settings.brightness;
@@ -461,6 +464,7 @@ void loadSettings() {
         blue_team_mode = false;
         cc1101_pa_module = false;
         theme_eva02 = true;
+        nrf24_power_high = true;
 
         // Write defaults to EEPROM immediately — prevents re-triggering on every boot
         EEPROM.begin(EEPROM_SIZE);
@@ -484,14 +488,15 @@ void loadSettings() {
         blue_team_mode = (settings.blueTeamMode == 1);
         cc1101_pa_module = (settings.cc1101PaModule == 1);
         theme_eva02 = (settings.themeEva02 == 1);
+        nrf24_power_high = (settings.nrf24PowerHigh == 1);
 
         // Apply rotation to global
         extern uint8_t screen_rotation;
-        // Validate rotation — allow 0 (standard), 1 (90CW), 2 (180), 3 (90CCW)
-        if (settings.rotation <= 3) {
+        // Portrait-only — the UI layout (CYD_SCREEN_WIDTH/HEIGHT) doesn't support landscape (1/3)
+        if (settings.rotation == 0 || settings.rotation == 2) {
             screen_rotation = settings.rotation;
         } else {
-            screen_rotation = 0;  // fallback to standard if garbage
+            screen_rotation = 0;  // fallback to standard for garbage or unsupported landscape values
         }
 
         // Apply touch calibration to globals

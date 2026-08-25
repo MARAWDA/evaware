@@ -98,6 +98,9 @@ extern bool blue_team_mode;         // VALHALLA blue team mode active (persisted
 // CC1101 PA MODULE STATE
 extern bool cc1101_pa_module;       // E07-433M20S PA module active (persisted in EEPROM)
 
+// NRF24 POWER LEVEL STATE
+extern bool nrf24_power_high;       // true = RF24_PA_HIGH, false = RF24_PA_LOW (persisted in EEPROM)
+
 // ═══════════════════════════════════════════════════════════════════════════
 // FUNCTION DECLARATIONS
 // ═══════════════════════════════════════════════════════════════════════════

@@ -15,6 +15,8 @@
 #include "touch_buttons.h"
 #include "utils.h"
 #include "icon.h"
+#include "skull_bg.h"
+#include "rei_bg.h"
 #include "nosifer_font.h"
 #include <TFT_eSPI.h>
 #include <BLEDevice.h>
@@ -190,6 +192,7 @@ static void runSelectedScript() {
 // ── Draw the screen ─────────────────────────────────────────────────────
 static void drawBuDisplay() {
     tft.fillScreen(HALEHOUND_BLACK);
+    tft.drawBitmap(0, 0, rei_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
     drawStatusBar();
     drawGlitchText(SCALE_Y(55), "BLU-USB", &Nosifer_Regular10pt7b);
     drawBuIconBar();

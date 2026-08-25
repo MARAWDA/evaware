@@ -43,6 +43,11 @@
 #include "icon.h"
 #include "skull_bg.h"
 #include "rei_bg.h"
+#include "bt_bg.h"
+#include "nrf_bg.h"
+#include "gps_bg.h"
+#include "tools_bg.h"
+#include "settings_bg.h"
 #include "evaware_bg.h"
 #include "josefin_sans_font.h"
 
@@ -327,6 +332,7 @@ bool cc1101_pa_module = false;      // E07 PA module active (persisted in EEPROM
 
 // NRF24 Power Level — swap between HIGH (better range) and LOW (more stable on weak power)
 bool nrf24_power_high = true;       // true = RF24_PA_HIGH, false = RF24_PA_LOW (persisted in EEPROM)
+bool nrf24_enabled = true;          // false = radio fully disabled, pins left floating (persisted in EEPROM)
 
 // Timeout option tables
 const int timeoutOptions[] = {30, 60, 120, 300, 600, 0};
@@ -442,6 +448,21 @@ void displaySubmenu() {
         tft.fillScreen(TFT_BLACK);
         if (current_menu_index == 0) { // WiFi submenu only
             tft.drawBitmap(0, 0, rei_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
+        }
+        if (current_menu_index == 1) { // Bluetooth submenu only
+            tft.drawBitmap(0, 0, bt_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
+        }
+        if (current_menu_index == 2) { // 2.4GHz/NRF24 submenu only
+            tft.drawBitmap(0, 0, nrf_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
+        }
+        if (current_menu_index == 4) { // GPS/SIGINT submenu only
+            tft.drawBitmap(0, 0, gps_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
+        }
+        if (current_menu_index == 5) { // Tools submenu only
+            tft.drawBitmap(0, 0, tools_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
+        }
+        if (current_menu_index == 6) { // Settings submenu only
+            tft.drawBitmap(0, 0, settings_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
         }
         drawInoIconBar();  // Always-visible back button - reachable even if the list overflows
 
@@ -1162,6 +1183,20 @@ void handleNRFSubmenuTouch() {
             waitForTouchRelease();
 
             gpsStopForRadio();
+
+            // NRF24 Power Level screen (case 9) must stay reachable even when the
+            // radio is disabled, so the user can turn it back on from here.
+            if (!nrf24_enabled && current_submenu_index != 9) {
+                tft.fillScreen(TFT_BLACK);
+                drawGlitchTitle(100, "NRF24 DISABLED");
+                tft.setTextColor(HALEHOUND_GUNMETAL);
+                tft.setTextSize(1);
+                drawCenteredText(150, "Enable it in NRF24 Power settings", HALEHOUND_GUNMETAL, 1);
+                delay(1500);
+                feature_active = false;
+                return;
+            }
+
             if (!nrf24IsActive()) {
                 nrf24Setup();
             }
@@ -2438,7 +2473,7 @@ void displayNRF24PowerScreen() {
     tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(50), 6, HALEHOUND_MAGENTA);
     tft.setTextSize(2);
     tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
-    const char* modeLabel = nrf24_power_high ? "HIGH" : "LOW";
+    const char* modeLabel = !nrf24_enabled ? "OFF" : (nrf24_power_high ? "HIGH" : "LOW");
     int modeTw = strlen(modeLabel) * 12;
     tft.setCursor((sw - modeTw) / 2, SCALE_Y(108));
     tft.print(modeLabel);
@@ -2446,7 +2481,14 @@ void displayNRF24PowerScreen() {
     // Description
     tft.setTextSize(1);
     tft.setTextColor(HALEHOUND_GUNMETAL);
-    if (nrf24_power_high) {
+    if (!nrf24_enabled) {
+        tft.setCursor(boxX, SCALE_Y(160));
+        tft.print("Radio fully disabled — pins");
+        tft.setCursor(boxX, SCALE_Y(172));
+        tft.print("float, zero current draw.");
+        tft.setCursor(boxX, SCALE_Y(184));
+        tft.print("2.4GHz features unavailable.");
+    } else if (nrf24_power_high) {
         tft.setCursor(boxX, SCALE_Y(160));
         tft.print("Best range / signal strength");
         tft.setCursor(boxX, SCALE_Y(172));
@@ -2489,15 +2531,24 @@ void nrf24PowerLoop() {
             break;
         }
 
-        // Toggle button
+        // Toggle button — cycles HIGH -> LOW -> OFF -> HIGH
         if (isTouchInArea(btnX, SCALE_Y(230), btnW, SCALE_H(45))) {
-            nrf24_power_high = !nrf24_power_high;
+            if (nrf24_enabled && nrf24_power_high) {
+                nrf24_power_high = false;          // HIGH -> LOW
+            } else if (nrf24_enabled && !nrf24_power_high) {
+                nrf24_enabled = false;              // LOW -> OFF
+                nrf24Shutdown();                    // release SPI, float CE/CSN pins now
+            } else {
+                nrf24_enabled = true;               // OFF -> HIGH
+                nrf24_power_high = true;
+            }
 
             // Apply immediately if the radio is currently active
-            if (nrf24IsActive()) {
+            if (nrf24_enabled && nrf24IsActive()) {
                 nrf24SetPower(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
             }
-            Serial.printf("[NRF24] Power level set to %s\n", nrf24_power_high ? "HIGH" : "LOW");
+            Serial.printf("[NRF24] Power level set to %s\n",
+                          !nrf24_enabled ? "OFF" : (nrf24_power_high ? "HIGH" : "LOW"));
 
             saveSettings();
             displayNRF24PowerScreen();
@@ -2583,8 +2634,12 @@ void handleAboutPage() {
     // I draw my full-screen about page — same visual punch as my splash screen
     tft.fillScreen(TFT_BLACK);
 
-    // Skull watermark — dark cyan, same as my splash screen
-    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);
+    // EVAWARE artwork watermark — same as main menu and splash screen
+    #ifdef CYD_35
+    tft.drawBitmap(0, 0, evaware_bg_35_bitmap, EVAWARE_BG_35_WIDTH, EVAWARE_BG_35_HEIGHT, 0x2945);
+    #else
+    tft.drawBitmap(0, 0, evaware_bg_28_bitmap, EVAWARE_BG_28_WIDTH, EVAWARE_BG_28_HEIGHT, 0x2945);
+    #endif
 
     // My double border — HaleHound signature
     tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
@@ -3509,8 +3564,12 @@ void showSplash() {
     tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
     tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_MAGENTA);
 
-    // Skull splatter watermark - full screen
-    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);  // Dark cyan watermark (brightened for all panel variants)
+    // EVAWARE artwork watermark — same as main menu
+#ifdef CYD_35
+    tft.drawBitmap(0, 0, evaware_bg_35_bitmap, EVAWARE_BG_35_WIDTH, EVAWARE_BG_35_HEIGHT, 0x2945);
+#else
+    tft.drawBitmap(0, 0, evaware_bg_28_bitmap, EVAWARE_BG_28_WIDTH, EVAWARE_BG_28_HEIGHT, 0x2945);
+#endif
 
 #ifdef CYD_35
     // Title — glitch effect (scaled for 480px height)
@@ -3783,11 +3842,16 @@ void setup() {
     initButtons();
     Serial.println("[INIT] Touch buttons OK");
 
+    // Load settings early so nrf24_enabled is known before the boot probe below
+    // (brightness/rotation/etc. get re-applied normally further down at their usual spot)
+    loadSettings();
+
     // ═══════════════════════════════════════════════════════════════════════
     // WRONG FIRMWARE DETECTION — NRF24 SPI probe catches pin mismatches
     // Covers: CYD vs E32R28T (swapped CSN pins), CYD vs CYD-HAT, missing NRF24
+    // Skipped entirely when the user has disabled NRF24 in Settings.
     // ═══════════════════════════════════════════════════════════════════════
-    {
+    if (nrf24_enabled) {
         // Properly claim SPI for NRF24 check
         SPI.end();
         delay(10);
@@ -3890,8 +3954,7 @@ void setup() {
 
     // Touch test available via runTouchTest() if needed for recalibration
 
-    // Load settings from EEPROM (brightness, timeout, color order, rotation, touch cal, color mode, PIN)
-    loadSettings();
+    // Settings already loaded above (before the NRF24 boot probe)
 
     ledcWrite(0, brightness_level);
     applyColorMode(color_mode);

@@ -309,7 +309,8 @@
 // │ SCK ────────┼──────┤ GPIO 18     │ (shared VSPI)
 // │ MOSI ───────┼──────┤ GPIO 23     │ (shared VSPI)
 // │ MISO ───────┼──────┤ GPIO 19     │ (shared VSPI)
-// │ CSN ────────┼──────┤ GPIO 26     │ (DAC pad — amp shut down)
+// │ CSN ────────┼──────┤ GPIO 21     │ (SPI peripheral connector — NOT GPIO 26,
+// │             │      │             │  GPIO 26 is GPS_RX_PIN on this board!)
 // │ CE ─────────┼──────┤ GPIO 16     │ (RGB Green pad)
 // │ IRQ ────────┼──────┤ N/C         │ (GPIO 17 used for PN532)
 // └─────────────┘      └─────────────┘

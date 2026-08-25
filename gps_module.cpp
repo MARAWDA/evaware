@@ -18,6 +18,8 @@
 #include "utils.h"
 #include "touch_buttons.h"
 #include "icon.h"
+#include "skull_bg.h"
+#include "gps_bg.h"
 #include "nrf24_config.h"
 #include <TinyGPSPlus.h>
 
@@ -390,6 +392,7 @@ static void drawSkullIndicator(bool hasFix, bool hasData) {
 
 static void drawGPSScreen() {
     tft.fillScreen(HALEHOUND_BLACK);
+    tft.drawBitmap(0, 0, gps_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
     drawStatusBar();
     drawGPSIconBar();
 

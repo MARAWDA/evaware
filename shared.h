@@ -100,6 +100,7 @@ extern bool cc1101_pa_module;       // E07-433M20S PA module active (persisted i
 
 // NRF24 POWER LEVEL STATE
 extern bool nrf24_power_high;       // true = RF24_PA_HIGH, false = RF24_PA_LOW (persisted in EEPROM)
+extern bool nrf24_enabled;          // false = radio fully disabled, pins left floating (persisted in EEPROM)
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FUNCTION DECLARATIONS

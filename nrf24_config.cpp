@@ -64,6 +64,12 @@ void nrf24ReleaseSPI() {
     SPI.end();
     SPI.begin(RADIO_SPI_SCK, RADIO_SPI_MISO, RADIO_SPI_MOSI, CC1101_CS);
 
+    // Float NRF24_CSN so it stops actively driving the line. On E32R28T/CYD_28,
+    // NRF24_CSN and GPS_RX_PIN are the SAME physical GPIO 26 pad (board has no
+    // spare pins) — leaving CSN as a driven output after "shutdown" fights the
+    // GPS module's TX signal on that shared wire and corrupts every sentence.
+    pinMode(NRF24_CSN, INPUT);
+
     spiClaimed = false;
 
     #if CYD_DEBUG
@@ -76,6 +82,13 @@ void nrf24ReleaseSPI() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 bool nrf24Setup() {
+    if (!nrf24_enabled) {
+        #if CYD_DEBUG
+        Serial.println("[NRF24] Disabled in settings — skipping init");
+        #endif
+        return false;
+    }
+
     #if CYD_DEBUG
     Serial.println("[NRF24] Initializing...");
     Serial.println("  CE:  GPIO " + String(NRF24_CE));

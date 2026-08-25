@@ -733,7 +733,7 @@ void scannerLoop() {
                 return;
             }
             // Refresh icon
-            if (tx >= nrfIconX[1] - 10) {
+            if (tx >= nrfIconX[1] - 10 && tx < nrfIconX[1] + NRF_ICON_SIZE + 10) {
                 stopScanTask();  // Stop Core 0 task — releases SPI
                 waitForTouchRelease();
                 delay(200);
@@ -1248,7 +1248,7 @@ void analyzerLoop() {
                 return;
             }
             // Start/Stop icon
-            if (tx >= nrfIconX[1] - 10) {
+            if (tx >= nrfIconX[1] - 10 && tx < nrfIconX[1] + NRF_ICON_SIZE + 10) {
                 // Wait for touch release
                 waitForTouchRelease();
                 delay(200);
@@ -2522,7 +2522,7 @@ void prokillLoop() {
                 return;
             }
             // Toggle icon (x=50)
-            if (tx >= 40 && tx < 100) {
+            if (tx >= SCALE_X(40) && tx < SCALE_X(100)) {
                 if (jammerActive) {
                     pkStopJamming();
                 } else {
@@ -2532,14 +2532,14 @@ void prokillLoop() {
                 waitForTouchRelease();
             }
             // Mode + icon (x=130)
-            if (tx >= 100 && tx < 170) {
+            if (tx >= SCALE_X(100) && tx < SCALE_X(170)) {
                 currentMode = static_cast<OperationMode>((currentMode + 1) % 8);
                 pkJamModeIndex = (int)currentMode;  // sync to jam task
                 updatePkStatus();
                 waitForTouchRelease();
             }
             // Mode - icon (x=170)
-            if (tx >= 170) {
+            if (tx >= SCALE_X(170) && tx < SCALE_X(230)) {
                 currentMode = static_cast<OperationMode>((currentMode == 0) ? 7 : (currentMode - 1));
                 pkJamModeIndex = (int)currentMode;  // sync to jam task
                 updatePkStatus();

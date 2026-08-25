@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // HaleHound-CYD Main Firmware
 // ESP32 Cheap Yellow Display Edition
-// v3.4.0 — Replace CYD 3.5" with E32R35T, fix touch, scale GPS for 320x480
+// v4.0.0 — Replace CYD 3.5" with E32R35T, fix touch, scale GPS for 320x480
 // Created: 2026-02-06
 // ═══════════════════════════════════════════════════════════════════════════
 //
@@ -615,7 +615,7 @@ void displayMenu() {
         tft.drawRect(4, barY + 2, SCREEN_WIDTH - 8, barH - 4, borderInner);
 
         // Nosifer 10pt glitch text centered
-        const char* label = btm ? "BLUE TEAM" : "EVAWARE v0.0.1";
+        const char* label = btm ? "BLUE TEAM" : "EVAWARE v4.0";
         tft.setFreeFont(&Nosifer_Regular10pt7b);
         int tw = tft.textWidth(label);
         int tx = (SCREEN_WIDTH - tw) / 2;

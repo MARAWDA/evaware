@@ -43,7 +43,7 @@
 // FIRMWARE VERSION — single source of truth
 // ═══════════════════════════════════════════════════════════════════════════
 
-#define FW_VERSION "v3.4.0"
+#define FW_VERSION "v4.0.0"
 
 #ifdef CYD_35
   #define FW_EDITION   "E32R35T Edition"

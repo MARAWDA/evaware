@@ -1,0 +1,125 @@
+/* EVAWARE Flasher - strict black & white monochrome theme */
+
+* {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: none;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+QMainWindow, QWidget {
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+QLabel {
+    background-color: transparent;
+    color: #FFFFFF;
+}
+
+QLabel#sectionHeader {
+    font-weight: bold;
+    font-size: 13px;
+    border-bottom: 1px solid #FFFFFF;
+    padding-bottom: 4px;
+}
+
+QPushButton {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+    padding: 8px 12px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+QPushButton:pressed {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+QPushButton:disabled {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+}
+
+QComboBox {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+    padding: 4px 6px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+    selection-background-color: #FFFFFF;
+    selection-color: #000000;
+}
+
+QTextEdit, QPlainTextEdit {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+    font-family: "Consolas", "Courier New", monospace;
+}
+
+QProgressBar {
+    background-color: #000000;
+    border: 1px solid #FFFFFF;
+    color: #FFFFFF;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #FFFFFF;
+}
+
+QFrame#separator {
+    background-color: #FFFFFF;
+    max-height: 1px;
+    min-height: 1px;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #000000;
+    border: 1px solid #FFFFFF;
+}
+
+QScrollBar::handle {
+    background: #FFFFFF;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    background: #000000;
+    border: none;
+}
+
+QStatusBar {
+    background-color: #000000;
+    color: #FFFFFF;
+    border-top: 1px solid #FFFFFF;
+}
+
+QMenuBar, QMenu {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+}
+
+QMenuBar::item:selected, QMenu::item:selected {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+QToolTip {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 1px solid #FFFFFF;
+}

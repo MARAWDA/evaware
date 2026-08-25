@@ -1,0 +1,51 @@
+
+This file lists modules PyInstaller was not able to find. This does not
+necessarily mean these modules are required for running your program. Both
+Python's standard library and 3rd-party Python packages often conditionally
+import optional modules, some of which may be available only on certain
+platforms.
+
+Types of import:
+* top-level: imported at the top-level - look at these first
+* conditional: imported within an if-statement
+* delayed: imported within a function
+* optional: imported within a try-except-statement
+
+IMPORTANT: Do NOT post this list to the issue-tracker. Use it as a basis for
+            tracking down the missing module yourself. Thanks!
+
+missing module named pwd - imported by posixpath (delayed, conditional, optional), shutil (delayed, optional), tarfile (optional), pathlib (delayed, optional), subprocess (delayed, conditional, optional), getpass (delayed), http.server (delayed, optional), netrc (delayed, conditional)
+missing module named grp - imported by shutil (delayed, optional), tarfile (optional), pathlib (delayed, optional), subprocess (delayed, conditional, optional)
+missing module named posix - imported by posixpath (optional), shutil (conditional), importlib._bootstrap_external (conditional), os (conditional, optional)
+missing module named resource - imported by posix (top-level)
+missing module named _frozen_importlib_external - imported by importlib._bootstrap (delayed), importlib (optional), importlib.abc (optional), zipimport (top-level)
+excluded module named _frozen_importlib - imported by importlib (optional), importlib.abc (optional), zipimport (top-level)
+missing module named pyimod02_importers - imported by C:\Users\wisht\Downloads\HaleHound-CYD-main\HaleHound-CYD-main\.venv\Lib\site-packages\PyInstaller\hooks\rthooks\pyi_rth_pkgutil.py (delayed)
+missing module named _posixsubprocess - imported by subprocess (conditional)
+missing module named fcntl - imported by subprocess (optional), pty (delayed, optional), serial.serialposix (top-level), esptool.reset (conditional)
+missing module named termios - imported by click._termui_impl (conditional), tty (top-level), getpass (optional), serial.serialposix (top-level), esptool.reset (conditional)
+missing module named 'System.IO' - imported by serial.serialcli (top-level)
+missing module named System - imported by serial.serialcli (top-level)
+missing module named cStringIO - imported by intelhex.compat (conditional)
+missing module named vms_lib - imported by platform (delayed, optional)
+missing module named 'java.lang' - imported by platform (delayed, optional)
+missing module named java - imported by platform (delayed)
+missing module named _winreg - imported by platform (delayed, optional), pygments.formatters.img (optional)
+missing module named typing_extensions - imported by click._winconsole (conditional, optional), click.utils (conditional), click.types (conditional), click.shell_completion (conditional), click.core (conditional), click.decorators (conditional), markdown_it.utils (conditional), rich.live (conditional), rich_click.utils (conditional), rich_click.decorators (conditional)
+missing module named pygments.lexers.PrologLexer - imported by pygments.lexers (top-level), pygments.lexers.cplint (top-level)
+missing module named _scproxy - imported by urllib.request (conditional)
+missing module named numpy - imported by PIL._typing (conditional, optional)
+missing module named olefile - imported by PIL.FpxImagePlugin (top-level), PIL.MicImagePlugin (top-level)
+missing module named defusedxml - imported by PIL.Image (optional)
+missing module named ctags - imported by pygments.formatters.html (optional)
+missing module named chardet - imported by pygments.lexer (delayed, conditional, optional)
+missing module named 'IPython.core' - imported by rich.pretty (delayed, optional)
+missing module named attr - imported by rich.pretty (optional)
+missing module named linkify_it - imported by markdown_it.main (optional)
+missing module named IPython - imported by rich.jupyter (delayed, optional)
+missing module named ipywidgets - imported by rich.live (delayed, conditional, optional)
+missing module named 'IPython.display' - imported by rich.live (delayed, conditional, optional)
+missing module named 'typer.main' - imported by rich_click.patch (delayed)
+missing module named 'typer.models' - imported by rich_click.patch (delayed)
+missing module named 'typer.core' - imported by rich_click.patch (delayed)
+missing module named typer - imported by rich_click.patch (conditional), rich_click._compat_typer (top-level)

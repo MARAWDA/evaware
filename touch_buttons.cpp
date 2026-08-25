@@ -17,6 +17,7 @@
 #include "touch_buttons.h"
 #include "icon.h"
 #include "shared.h"
+#include "screen_mirror.h"
 #ifndef CYD_35
   #include "CYD28_TouchscreenR.h"
 #endif
@@ -394,6 +395,7 @@ bool peekTouchPoint(uint16_t *x, uint16_t *y) {
 }
 
 bool getTouchPoint(uint16_t *x, uint16_t *y) {
+    checkScreenMirrorRequest();  // service any pending PC screen-mirror request
 #ifdef CYD_35
     // XPT2046 resistive = polled, no edge-trigger needed (same as 2.8")
     // Debounce handled by callers (lastTap checks, delay(), etc.)
@@ -581,6 +583,8 @@ bool isBootButtonPressed() {
 
 void touchButtonsUpdate() {
     if (!initialized) return;
+
+    checkScreenMirrorRequest();  // service any pending PC screen-mirror request every tick
 
     uint32_t now = millis();
 

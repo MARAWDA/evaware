@@ -1,0 +1,19 @@
+How to flash from Windows (recap, simplified)
+1. USB driver (once only)
+
+Install CH340 driver: https://www.wch.cn/downloads/CH341SER_EXE.html
+Plug in your board
+2. Install PlatformIO (once only)
+
+In VS Code: Extensions icon → search "PlatformIO IDE" → Install → let it reload VS Code
+3. Build + flash
+
+Click the alien-head PlatformIO icon on the sidebar
+Under "PROJECT TASKS" pick your board:
+2.8" → esp32-cyd
+3.5" Hosyond → esp32-e32r35t
+Expand it, click Upload
+4. If it hangs at "Connecting..."
+
+Hold BOOT, tap RESET once, keep holding BOOT a couple seconds after "Connecting..." appears, then release
+hopefully ts worked good and dont look ass i still have enought coins to put it back toi the normal looking shut

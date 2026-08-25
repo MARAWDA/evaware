@@ -67,6 +67,7 @@
 #include "saved_captures.h"
 #include "iot_recon.h"
 #include "loot_manager.h"
+#include "screen_mirror.h"
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GLOBAL OBJECTS
@@ -4020,6 +4021,7 @@ void setup() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 void loop() {
+    checkScreenMirrorRequest();  // service any pending PC screen-mirror request
     handleButtons();
     delay(20);
 }

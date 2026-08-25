@@ -1,0 +1,213 @@
+================================================================================
+              HALEHOUND-CYD FLASH INSTRUCTIONS
+              v4.0.0 CYD Edition
+================================================================================
+
+  Repository:   https://github.com/JesseCHale/HaleHound-CYD
+  Author:       Jesse C. Hale (JesseCHale)
+
+================================================================================
+
+
+================================================================================
+  ABOUT THIS FIRMWARE
+================================================================================
+
+This is a SINGLE firmware binary. One file, all boards. No more
+guessing which rotation variant to download.
+
+The UI is PORTRAIT orientation (taller than wide). Different CYD
+manufacturers mount the LCD panel in different directions, so the
+display may appear upside-down or sideways on first boot. This is
+normal -- it does NOT mean your board is broken.
+
+To fix it, go to Settings > Rotation and pick the one that puts
+the display right-side up in portrait:
+  - Standard (0)      Most common. USB port at bottom.
+  - Flipped 180       USB port at top.
+  - 90 CW             For boards with sideways-mounted LCD panels.
+  - 90 CCW            For boards with sideways-mounted LCD panels.
+
+Touch input automatically recalibrates when you change rotation.
+On first boot, the firmware will prompt you to calibrate touch by
+tapping 4 corner crosshairs.
+
+NOTE: 90 CW and 90 CCW exist ONLY for boards whose LCD panels are
+mounted sideways by the manufacturer. They rotate the portrait UI
+to compensate. This is NOT a landscape mode.
+
+
+================================================================================
+  CHOOSE YOUR BOARD
+================================================================================
+
+Three boards are supported. Use the correct firmware file for your board.
+
+  CYD 2.8" (ESP32-2432S028):
+    Single file:  HaleHound-CYD-FULL.bin
+    Four file:    HaleHound-CYD.bin
+
+  QDtech E32R35T (3.5"):
+    Single file:  HaleHound-E32R35T-FULL.bin
+    Four file:    HaleHound-E32R35T.bin
+
+  QDtech E32R28T:
+    Single file:  HaleHound-E32R28T-FULL.bin
+    Four file:    HaleHound-E32R28T.bin
+
+The bootloader, partitions, and boot_app0 files are shared across all
+boards. Only the firmware binary differs per board.
+
+
+================================================================================
+  CHOOSE YOUR FLASH METHOD
+================================================================================
+
+There are TWO flash methods. If one doesn't work, try the other.
+Replace "HaleHound-CYD" below with your board's filename from above.
+
+----------------------------------------------------------------------
+  METHOD A: SINGLE FILE (Easiest -- works for most boards)
+----------------------------------------------------------------------
+
+  FILE:  HaleHound-CYD-FULL.bin  (or your board's -FULL.bin)
+  FLASH ADDRESS: 0x0
+
+  USING ESP WEB FLASHER (Browser -- no install needed):
+    1. Open https://esp.huhn.me in Chrome, Edge, or Opera
+       (Firefox and Safari do NOT support Web Serial)
+    2. Click "Connect" and select your board's serial port
+    3. Set address to: 0x0
+    4. Click "Choose File" and select your board's -FULL.bin
+    5. Click "Program"
+    6. Wait for completion, then power cycle the board
+
+  USING ESPTOOL (Command line):
+    esptool.py --chip esp32 --baud 115200 write_flash 0x0 HaleHound-CYD-FULL.bin
+
+  IF YOU GET A BLACK SCREEN: Your board may not support the single-file
+  method (DIO flash mode incompatibility). Use Method B instead.
+
+----------------------------------------------------------------------
+  METHOD B: FOUR FILES (Fallback -- works on ALL boards)
+----------------------------------------------------------------------
+
+  Uses the firmware .bin + three shared boot files at specific addresses.
+  This method preserves the bootloader's native flash mode and works on
+  boards where single-file flashing produces a black screen.
+
+  FILES AND ADDRESSES:
+    bootloader.bin ......... 0x1000
+    partitions.bin ......... 0x8000
+    boot_app0.bin .......... 0xe000
+    HaleHound-CYD.bin ...... 0x10000  (or your board's .bin)
+
+  USING ESP WEB FLASHER (Browser):
+    1. Open https://esp.huhn.me in Chrome, Edge, or Opera
+    2. Click "Connect" and select your board's serial port
+    3. Add ALL FOUR files with their addresses:
+         0x1000  -> bootloader.bin
+         0x8000  -> partitions.bin
+         0xe000  -> boot_app0.bin
+         0x10000 -> HaleHound-CYD.bin  (or your board's .bin)
+    4. Click "Program"
+    5. Wait for completion, then power cycle the board
+
+  USING ESPTOOL (Command line):
+    esptool.py --chip esp32 --baud 115200 write_flash \
+      0x1000 bootloader.bin \
+      0x8000 partitions.bin \
+      0xe000 boot_app0.bin \
+      0x10000 HaleHound-CYD.bin
+
+
+================================================================================
+  FIRST BOOT
+================================================================================
+
+  After flashing:
+    1. Power cycle the CYD (unplug and replug USB)
+    2. You should see the HaleHound boot screen
+    3. Touch calibration will start automatically (tap the 4 crosshairs)
+    4. Once calibrated, you're at the main menu
+
+  IF YOUR DISPLAY IS UPSIDE-DOWN OR SIDEWAYS:
+    1. Navigate to Settings > Rotation
+    2. Select the correct orientation for your board
+    3. Touch will automatically recalibrate after rotation change
+    4. No reflashing needed!
+
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+  PROBLEM: Black screen after flashing
+  -------------------------------------
+    - If you used Method A (single file), try Method B (four files)
+    - Erase flash first: esptool.py --chip esp32 erase_flash
+    - Then reflash using Method B
+    - Try a different USB cable (data cable, not charge-only)
+    - Try baud rate 115200 instead of higher speeds
+
+  PROBLEM: Display is sideways or upside-down
+  ---------------------------------------------
+    - Go to Settings > Rotation and select the correct orientation
+    - Standard = USB at bottom, Flipped 180 = USB at top
+    - 90 CW = USB on left, 90 CCW = USB on right
+    - Touch recalibrates automatically after rotation change
+
+  PROBLEM: Touch is backwards or offset
+  ---------------------------------------
+    - Go to Settings > Rotation and try a different orientation
+    - If touch is still off, power cycle and recalibrate
+
+  PROBLEM: "Failed to connect" or "Timed out"
+  ---------------------------------------------
+    - Hold the BOOT button on the CYD while clicking "Program"
+    - Release BOOT after "Connecting..." appears
+    - Try a different USB port
+    - Install CH340 driver (see below)
+
+  PROBLEM: Browser flasher doesn't show serial port
+  ---------------------------------------------------
+    - Use Chrome, Edge, or Opera (Firefox/Safari don't support Web Serial)
+    - Install the CH340 USB driver for your OS:
+        Windows: https://www.wch-ic.com/downloads/CH341SER_EXE.html
+        macOS:   https://www.wch-ic.com/downloads/CH341SER_MAC_ZIP.html
+        Linux:   Built into kernel 5.x+ (no install needed)
+
+  PROBLEM: Flashing completes but CYD doesn't boot
+  --------------------------------------------------
+    - Unplug USB, wait 5 seconds, replug
+    - If still black, erase and reflash:
+        esptool.py --chip esp32 erase_flash
+    - Then flash again using Method B
+
+
+================================================================================
+  FILE LIST
+================================================================================
+
+  SHARED BOOT FILES (same for all boards):
+    bootloader.bin .................. 0x1000
+    partitions.bin .................. 0x8000
+    boot_app0.bin ................... 0xe000
+
+  CYD 2.8" (ESP32-2432S028):
+    HaleHound-CYD-FULL.bin ......... 0x0 (single file, complete image)
+    HaleHound-CYD.bin .............. 0x10000 (firmware only, 4-file method)
+
+  QDtech E32R35T (3.5"):
+    HaleHound-E32R35T-FULL.bin ..... 0x0 (single file, complete image)
+    HaleHound-E32R35T.bin .......... 0x10000 (firmware only, 4-file method)
+
+  QDtech E32R28T:
+    HaleHound-E32R28T-FULL.bin ..... 0x0 (single file, complete image)
+    HaleHound-E32R28T.bin .......... 0x10000 (firmware only, 4-file method)
+
+
+================================================================================
+  HALEHOUND-CYD
+  https://github.com/JesseCHale/HaleHound-CYD
+================================================================================

@@ -1,0 +1,3957 @@
+# 1 "C:\\Users\\wisht\\AppData\\Local\\Temp\\tmpjtyabca_"
+#include <Arduino.h>
+# 1 "C:/Users/wisht/Downloads/HaleHound-CYD-main/HaleHound-CYD-main/HaleHound-CYD.ino"
+# 30 "C:/Users/wisht/Downloads/HaleHound-CYD-main/HaleHound-CYD-main/HaleHound-CYD.ino"
+#include <SPI.h>
+#include <TFT_eSPI.h>
+#include <WiFi.h>
+#include <BLEDevice.h>
+#include <SD.h>
+#include <ELECHOUSE_CC1101_SRC_DRV.h>
+
+
+#include "cyd_config.h"
+#include "shared.h"
+#include "utils.h"
+#include "touch_buttons.h"
+#include "spi_manager.h"
+#include "icon.h"
+#include "skull_bg.h"
+#include "evaware_bg.h"
+#include "josefin_sans_font.h"
+
+
+#include "wifi_attacks.h"
+#include "bluetooth_attacks.h"
+#include "nrf24_config.h"
+#include "nrf24_attacks.h"
+#include "badusb_attacks.h"
+#include "gps_module.h"
+#include "serial_monitor.h"
+#include "firmware_update.h"
+#include "wardriving_screen.h"
+#include "eapol_capture.h"
+#include "karma_attack.h"
+#include "saved_captures.h"
+#include "iot_recon.h"
+#include "loot_manager.h"
+
+
+
+
+
+TFT_eSPI tft = TFT_eSPI();
+
+
+#define VALHALLA_BLUE 0x541F
+#define VALHALLA_PURPLE 0x780F
+
+
+int current_menu_index = 0;
+int current_submenu_index = 0;
+bool in_sub_menu = false;
+bool feature_active = false;
+bool submenu_initialized = false;
+bool is_main_menu = false;
+bool feature_exit_requested = false;
+
+int last_menu_index = -1;
+int last_submenu_index = -1;
+bool menu_initialized = false;
+
+unsigned long last_interaction_time = 0;
+
+
+
+
+
+const int NUM_MENU_ITEMS = 8;
+const char *menu_items[NUM_MENU_ITEMS] = {
+    "WiFi",
+    "Bluetooth",
+    "2.4GHz",
+    "Blu-USB",
+    "GPS",
+    "Tools",
+    "Setting",
+    "About"
+};
+
+const unsigned char *bitmap_icons[NUM_MENU_ITEMS] = {
+    bitmap_icon_skull_wifi,
+    bitmap_icon_skull_bluetooth,
+    bitmap_icon_skull_jammer,
+    bitmap_icon_skull_subghz,
+    bitmap_icon_skull_ir,
+    bitmap_icon_skull_tools,
+    bitmap_icon_skull_setting,
+    bitmap_icon_skull_about
+};
+
+
+const int NUM_SUBMENU_ITEMS = 9;
+const char *submenu_items[NUM_SUBMENU_ITEMS] = {
+    "Packet Monitor",
+    "Beacon Spammer",
+    "WiFi Deauther",
+    "Probe Sniffer",
+    "WiFi Scanner",
+    "Captive Portal",
+    "Station Scanner",
+    "Auth Flood",
+    "Back to Main Menu"
+};
+
+const unsigned char *wifi_submenu_icons[NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_wifi,
+    bitmap_icon_antenna,
+    bitmap_icon_wifi_jammer,
+    bitmap_icon_skull_wifi,
+    bitmap_icon_jammer,
+    bitmap_icon_bash,
+    bitmap_icon_graph,
+    bitmap_icon_nuke,
+    bitmap_icon_go_back
+};
+
+
+const int bluetooth_NUM_SUBMENU_ITEMS = 9;
+const char *bluetooth_submenu_items[bluetooth_NUM_SUBMENU_ITEMS] = {
+    "BLE Jammer",
+    "BLE Spoofer",
+    "BLE Beacon",
+    "Sniffer",
+    "BLE Scanner",
+    "WhisperPair",
+    "AirTag",
+    "Lunatic Fringe",
+    "Back to Main Menu"
+};
+
+const unsigned char *bluetooth_submenu_icons[bluetooth_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_ble_jammer,
+    bitmap_icon_spoofer,
+    bitmap_icon_signal,
+    bitmap_icon_analyzer,
+    bitmap_icon_graph,
+    bitmap_icon_eye,
+    bitmap_icon_apple,
+    bitmap_icon_scanner,
+    bitmap_icon_go_back
+};
+
+
+const int airtag_NUM_SUBMENU_ITEMS = 4;
+static const char * const airtag_submenu_items_flash[] = {
+    "AirTag Detect",
+    "Phantom Flood",
+    "AirTag Replay",
+    "Back"
+};
+
+static const unsigned char * const airtag_submenu_icons_flash[] = {
+    bitmap_icon_scanner,
+    bitmap_icon_nuke,
+    bitmap_icon_antenna,
+    bitmap_icon_go_back
+};
+
+
+const int nrf_NUM_SUBMENU_ITEMS = 7;
+const char *nrf_submenu_items[nrf_NUM_SUBMENU_ITEMS] = {
+    "Scanner",
+    "Spectrum Analyzer",
+    "NRF Sniffer",
+    "MouseJack",
+    "WLAN Jammer",
+    "Proto Kill",
+    "Back to Main Menu"
+};
+
+const unsigned char *nrf_submenu_icons[nrf_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_scanner,
+    bitmap_icon_analyzer,
+    bitmap_icon_eye,
+    bitmap_icon_nuke,
+    bitmap_icon_wifi_jammer,
+    bitmap_icon_skull_jammer,
+    bitmap_icon_go_back
+};
+
+
+const int badusb_NUM_SUBMENU_ITEMS = 1;
+const char *badusb_submenu_items[badusb_NUM_SUBMENU_ITEMS] = {
+    "Back to Main Menu"
+};
+
+const unsigned char *badusb_submenu_icons[badusb_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_go_back
+};
+
+
+const int sigint_NUM_SUBMENU_ITEMS = 7;
+const char *sigint_submenu_items[sigint_NUM_SUBMENU_ITEMS] = {
+    "EAPOL Capture",
+    "Karma Attack",
+    "Wardriving",
+    "Saved Captures",
+    "IoT Recon",
+    "Loot",
+    "Back to Main Menu"
+};
+
+const unsigned char *sigint_submenu_icons[sigint_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_key,
+    bitmap_icon_spoofer,
+    bitmap_icon_follow,
+    bitmap_icon_floppy2,
+    bitmap_icon_scanner,
+    bitmap_icon_floppy,
+    bitmap_icon_go_back
+};
+
+
+const int tools_NUM_SUBMENU_ITEMS = 5;
+const char *tools_submenu_items[tools_NUM_SUBMENU_ITEMS] = {
+    "Serial Monitor",
+    "Update Firmware",
+    "Touch Calibrate",
+    "GPS",
+    "Back to Main Menu"
+};
+
+const unsigned char *tools_submenu_icons[tools_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_bash,
+    bitmap_icon_follow,
+    bitmap_icon_stat,
+    bitmap_icon_antenna,
+    bitmap_icon_go_back
+};
+
+
+const int settings_NUM_SUBMENU_ITEMS = 11;
+const char *settings_submenu_items[settings_NUM_SUBMENU_ITEMS] = {
+    "Brightness",
+    "Screen Timeout",
+    "Swap Colors",
+    "Invert Display",
+    "Color Mode",
+    "Theme",
+    "Rotation",
+    "Device Info",
+    "Set PIN",
+    "NRF24 Power",
+    "Back to Main Menu"
+};
+
+const unsigned char *settings_submenu_icons[settings_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_led,
+    bitmap_icon_eye2,
+    bitmap_icon_led,
+    bitmap_icon_led,
+    bitmap_icon_led,
+    bitmap_icon_led,
+    bitmap_icon_follow,
+    bitmap_icon_stat,
+    bitmap_icon_eye2,
+    bitmap_icon_antenna,
+    bitmap_icon_go_back
+};
+
+
+const int about_NUM_SUBMENU_ITEMS = 1;
+const char *about_submenu_items[about_NUM_SUBMENU_ITEMS] = {
+    "Back to Main Menu"
+};
+
+const unsigned char *about_submenu_icons[about_NUM_SUBMENU_ITEMS] = {
+    bitmap_icon_go_back
+};
+
+
+const char **active_submenu_items = nullptr;
+int active_submenu_size = 0;
+const unsigned char **active_submenu_icons = nullptr;
+
+
+int brightness_level = 255;
+int screen_timeout_seconds = 60;
+bool screen_asleep = false;
+bool color_order_rgb = false;
+bool display_inverted = false;
+uint8_t color_mode = 0;
+uint8_t screen_rotation = 0;
+
+
+uint16_t device_pin = 0;
+bool pin_enabled = false;
+bool device_locked = false;
+
+
+bool disclaimer_accepted = false;
+bool blue_team_mode = false;
+
+
+bool cc1101_pa_module = false;
+
+
+bool nrf24_power_high = true;
+
+
+const int timeoutOptions[] = {30, 60, 120, 300, 600, 0};
+const char* timeoutLabels[] = {"30 SEC", "1 MIN", "2 MIN", "5 MIN", "10 MIN", "NEVER"};
+const int numTimeoutOptions = 6;
+
+
+
+
+
+const int COLUMN_WIDTH = SCREEN_WIDTH / 2;
+const int X_OFFSET_LEFT = 10;
+const int X_OFFSET_RIGHT = X_OFFSET_LEFT + COLUMN_WIDTH;
+const int Y_START = 30;
+const int Y_SPACING = (SCREEN_HEIGHT - CONTENT_Y_START - BUTTON_BAR_H) / 4;
+
+
+
+
+
+#define INO_ICON_SIZE 16
+void drawInoIconBar();
+bool isInoBackTapped();
+void updateActiveSubmenu();
+void displaySubmenu();
+void displayMenu();
+void returnToSubmenu();
+void returnToMainMenu();
+void handleWiFiSubmenuTouch();
+void handleBluetoothSubmenuTouch();
+void handleAirTagHubTouch();
+void handleNRFSubmenuTouch();
+void handleBadUSBPage();
+void showSigintPlaceholder(const char* title);
+void handleSIGINTSubmenuTouch();
+void handleToolsSubmenuTouch();
+void displayBrightnessControl();
+void brightnessControlLoop();
+int getTimeoutOptionIndex();
+void displayTimeoutControl();
+void screenTimeoutControlLoop();
+void displayColorSwap();
+void colorSwapLoop();
+void displayInvertScreen();
+void invertDisplayLoop();
+void colorModeScreen();
+void colorModeLoop();
+void themeScreen();
+void themeLoop();
+void displayRotationScreen();
+static void applyNewRotation(uint8_t newRot);
+void rotationControlLoop();
+static void _xd(char*o,const uint8_t*e,uint8_t l);
+void _svcRenderDiag();
+void _svcDiagA();
+void _svcDiagB();
+void _svcRunDiag();
+void displayDeviceInfo();
+void displayNRF24PowerScreen();
+void nrf24PowerLoop();
+void handleSettingsSubmenuTouch();
+void handleAboutPage();
+void showPinLockScreen();
+int pinEntryScreen(const char* title);
+void pinSetupLoop();
+bool isOffensiveAllowed();
+void showBlueTeamBlockedScreen();
+bool showDisclaimerScreen();
+void recursiveDeleteSD(File dir);
+void activateValhalla();
+void handleButtons();
+void showSplash();
+void runBootDiagnostics();
+void setup();
+void loop();
+#line 347 "C:/Users/wisht/Downloads/HaleHound-CYD-main/HaleHound-CYD-main/HaleHound-CYD.ino"
+void drawInoIconBar() {
+    tft.drawLine(0, ICON_BAR_TOP, SCREEN_WIDTH, ICON_BAR_TOP, HALEHOUND_MAGENTA);
+    tft.fillRect(0, ICON_BAR_Y, SCREEN_WIDTH, ICON_BAR_H, HALEHOUND_DARK);
+    tft.drawBitmap(10, ICON_BAR_Y, bitmap_icon_go_back, INO_ICON_SIZE, INO_ICON_SIZE, HALEHOUND_MAGENTA);
+    tft.drawLine(0, ICON_BAR_BOTTOM, SCREEN_WIDTH, ICON_BAR_BOTTOM, HALEHOUND_HOTPINK);
+}
+
+
+bool isInoBackTapped() {
+    uint16_t tx, ty;
+    if (getTouchPoint(&tx, &ty)) {
+        if (ty >= ICON_BAR_TOUCH_TOP && ty <= ICON_BAR_TOUCH_BOTTOM && tx >= 10 && tx < 26) {
+            consumeTouch();
+            delay(150);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+
+
+void updateActiveSubmenu() {
+    switch (current_menu_index) {
+        case 0:
+            active_submenu_items = submenu_items;
+            active_submenu_size = NUM_SUBMENU_ITEMS;
+            active_submenu_icons = wifi_submenu_icons;
+            break;
+        case 1:
+            active_submenu_items = bluetooth_submenu_items;
+            active_submenu_size = bluetooth_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = bluetooth_submenu_icons;
+            break;
+        case 2:
+            active_submenu_items = nrf_submenu_items;
+            active_submenu_size = nrf_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = nrf_submenu_icons;
+            break;
+        case 3:
+            active_submenu_items = badusb_submenu_items;
+            active_submenu_size = badusb_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = badusb_submenu_icons;
+            break;
+        case 4:
+            active_submenu_items = sigint_submenu_items;
+            active_submenu_size = sigint_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = sigint_submenu_icons;
+            break;
+        case 5:
+            active_submenu_items = tools_submenu_items;
+            active_submenu_size = tools_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = tools_submenu_icons;
+            break;
+        case 6:
+            active_submenu_items = settings_submenu_items;
+            active_submenu_size = settings_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = settings_submenu_icons;
+            break;
+        case 7:
+            active_submenu_items = about_submenu_items;
+            active_submenu_size = about_NUM_SUBMENU_ITEMS;
+            active_submenu_icons = about_submenu_icons;
+            break;
+        default:
+            active_submenu_items = nullptr;
+            active_submenu_size = 0;
+            active_submenu_icons = nullptr;
+            break;
+    }
+}
+
+
+
+
+
+void displaySubmenu() {
+    menu_initialized = false;
+    last_menu_index = -1;
+
+
+
+
+    tft.setTextSize(1);
+    tft.setFreeFont(&JosefinSans_SemiBold15pt7b);
+
+    if (!submenu_initialized) {
+        tft.fillScreen(TFT_BLACK);
+        drawInoIconBar();
+
+        for (int i = 0; i < active_submenu_size; i++) {
+            int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+            if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+            tft.setTextColor(HALEHOUND_MAGENTA, TFT_BLACK);
+            tft.drawBitmap(10, yPos, active_submenu_icons[i], 16, 16, HALEHOUND_MAGENTA);
+            tft.setCursor(30, yPos + 11);
+            if (i < active_submenu_size - 1) {
+                tft.print("| ");
+            }
+            tft.print(active_submenu_items[i]);
+        }
+
+        submenu_initialized = true;
+        last_submenu_index = -1;
+    }
+
+
+    if (last_submenu_index != current_submenu_index) {
+
+        if (last_submenu_index >= 0) {
+            int prev_yPos = SUBMENU_Y_START + last_submenu_index * SUBMENU_Y_SPACING;
+            if (last_submenu_index == active_submenu_size - 1) prev_yPos += SUBMENU_LAST_GAP;
+
+            tft.setTextColor(HALEHOUND_MAGENTA, TFT_BLACK);
+            tft.drawBitmap(10, prev_yPos, active_submenu_icons[last_submenu_index], 16, 16, HALEHOUND_MAGENTA);
+            tft.setCursor(30, prev_yPos + 11);
+            if (last_submenu_index < active_submenu_size - 1) {
+                tft.print("| ");
+            }
+            tft.print(active_submenu_items[last_submenu_index]);
+        }
+
+
+        int new_yPos = SUBMENU_Y_START + current_submenu_index * SUBMENU_Y_SPACING;
+        if (current_submenu_index == active_submenu_size - 1) new_yPos += SUBMENU_LAST_GAP;
+
+        tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+        tft.drawBitmap(10, new_yPos, active_submenu_icons[current_submenu_index], 16, 16, HALEHOUND_HOTPINK);
+        tft.setCursor(30, new_yPos + 11);
+        if (current_submenu_index < active_submenu_size - 1) {
+            tft.print("| ");
+        }
+        tft.print(active_submenu_items[current_submenu_index]);
+
+        last_submenu_index = current_submenu_index;
+    }
+
+    tft.setFreeFont(NULL);
+    drawStatusBar();
+}
+
+
+
+
+
+void displayMenu() {
+    submenu_initialized = false;
+    last_submenu_index = -1;
+    tft.setTextSize(1);
+    tft.setFreeFont(&JosefinSans_SemiBold15pt7b);
+
+    if (!menu_initialized) {
+
+        tft.fillScreen(TFT_BLACK);
+
+
+        #ifdef CYD_35
+        tft.drawBitmap(0, 0, evaware_bg_35_bitmap, EVAWARE_BG_35_WIDTH, EVAWARE_BG_35_HEIGHT, 0x2945);
+        #else
+        tft.drawBitmap(0, 0, evaware_bg_28_bitmap, EVAWARE_BG_28_WIDTH, EVAWARE_BG_28_HEIGHT, 0x2945);
+        #endif
+
+
+        for (int i = 0; i < NUM_MENU_ITEMS; i++) {
+            int column = (i < 4) ? 0 : 1;
+            int row = (i < 4) ? i : (i - 4);
+            int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
+            int y_position = Y_START + row * Y_SPACING;
+
+
+            tft.drawBitmap(x_position + MENU_ICON_OFFSET_X, y_position + 10, bitmap_icons[i], 16, 16, HALEHOUND_MAGENTA);
+
+            tft.setTextColor(HALEHOUND_MAGENTA);
+            int textWidth = tft.textWidth(menu_items[i]);
+            int textX = x_position + (MENU_BTN_W - textWidth) / 2;
+            int textY = y_position + MENU_TEXT_OFFSET_Y + 8;
+            tft.setCursor(textX, textY);
+            tft.print(menu_items[i]);
+        }
+        menu_initialized = true;
+        last_menu_index = -1;
+    }
+
+
+    if (last_menu_index != current_menu_index) {
+        for (int i = 0; i < NUM_MENU_ITEMS; i++) {
+            int column = (i < 4) ? 0 : 1;
+            int row = (i < 4) ? i : (i - 4);
+            int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
+            int y_position = Y_START + row * Y_SPACING;
+
+            if (i == last_menu_index) {
+
+                tft.fillRoundRect(x_position, y_position, MENU_BTN_W, MENU_BTN_H, 5, TFT_BLACK);
+                tft.drawBitmap(x_position + MENU_ICON_OFFSET_X, y_position + 10, bitmap_icons[last_menu_index], 16, 16, HALEHOUND_MAGENTA);
+                tft.setTextColor(HALEHOUND_MAGENTA);
+                int textWidth = tft.textWidth(menu_items[last_menu_index]);
+                int textX = x_position + (MENU_BTN_W - textWidth) / 2;
+                int textY = y_position + MENU_TEXT_OFFSET_Y + 8;
+                tft.setCursor(textX, textY);
+                tft.print(menu_items[last_menu_index]);
+            }
+        }
+
+
+        int column = (current_menu_index < 4) ? 0 : 1;
+        int row = (current_menu_index < 4) ? current_menu_index : (current_menu_index - 4);
+        int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
+        int y_position = Y_START + row * Y_SPACING;
+
+
+        tft.drawBitmap(x_position + MENU_ICON_OFFSET_X, y_position + 10, bitmap_icons[current_menu_index], 16, 16, HALEHOUND_HOTPINK);
+        tft.setTextColor(HALEHOUND_HOTPINK);
+        int textWidth = tft.textWidth(menu_items[current_menu_index]);
+        int textX = x_position + (MENU_BTN_W - textWidth) / 2;
+        int textY = y_position + MENU_TEXT_OFFSET_Y + 8;
+        tft.setCursor(textX, textY);
+        tft.print(menu_items[current_menu_index]);
+
+        last_menu_index = current_menu_index;
+    }
+
+    tft.setFreeFont(NULL);
+
+
+    {
+        int barY = SCREEN_HEIGHT - 22;
+        int barH = 20;
+        bool btm = blue_team_mode;
+        uint16_t borderOuter = btm ? VALHALLA_BLUE : HALEHOUND_MAGENTA;
+        uint16_t borderInner = btm ? VALHALLA_BLUE : HALEHOUND_VIOLET;
+
+
+        tft.fillRect(2, barY, SCREEN_WIDTH - 4, barH, HALEHOUND_DARK);
+        tft.drawRect(2, barY, SCREEN_WIDTH - 4, barH, borderOuter);
+        tft.drawRect(4, barY + 2, SCREEN_WIDTH - 8, barH - 4, borderInner);
+
+
+        const char* label = btm ? "BLUE TEAM" : "EVAWARE v0.0.1";
+        tft.setFreeFont(&Nosifer_Regular10pt7b);
+        int tw = tft.textWidth(label);
+        int tx = (SCREEN_WIDTH - tw) / 2;
+        int ty = barY + 16;
+
+
+        tft.setTextColor(btm ? VALHALLA_BLUE : HALEHOUND_MAGENTA);
+        tft.setCursor(tx - 1, ty - 1);
+        tft.print(label);
+
+
+        tft.setTextColor(btm ? VALHALLA_PURPLE : HALEHOUND_HOTPINK);
+        tft.setCursor(tx + 1, ty + 1);
+        tft.print(label);
+
+
+        tft.setTextColor(TFT_WHITE);
+        tft.setCursor(tx, ty);
+        tft.print(label);
+
+        tft.setFreeFont(NULL);
+    }
+
+
+    if (pin_enabled) {
+        tft.drawBitmap(SCREEN_WIDTH - 20, 2, bitmap_icon_eye2, 16, 16, HALEHOUND_HOTPINK);
+    }
+
+    drawStatusBar();
+}
+
+
+
+
+
+void returnToSubmenu() {
+    in_sub_menu = true;
+    is_main_menu = false;
+    submenu_initialized = false;
+    feature_active = false;
+    feature_exit_requested = false;
+    last_interaction_time = millis();
+    displaySubmenu();
+    delay(200);
+}
+
+void returnToMainMenu() {
+    in_sub_menu = false;
+    feature_active = false;
+    feature_exit_requested = false;
+    menu_initialized = false;
+    last_interaction_time = millis();
+    displayMenu();
+    is_main_menu = false;
+}
+
+
+
+
+
+void handleWiFiSubmenuTouch() {
+    touchButtonsUpdate();
+
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+
+            if (current_submenu_index == 8) {
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0:
+                    PacketMonitor::setup();
+                    while (!feature_exit_requested) {
+                        PacketMonitor::loop();
+                        if (PacketMonitor::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    PacketMonitor::cleanup();
+                    break;
+                case 1:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    BeaconSpammer::setup();
+                    while (!feature_exit_requested) {
+                        BeaconSpammer::loop();
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    BeaconSpammer::cleanup();
+                    break;
+                case 2:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    Deauther::setup();
+                    while (!feature_exit_requested) {
+                        Deauther::loop();
+                        touchButtonsUpdate();
+                        if (Deauther::isExitRequested()) feature_exit_requested = true;
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    Deauther::cleanup();
+                    break;
+                case 3:
+                    DeauthDetect::setup();
+                    while (!feature_exit_requested) {
+                        DeauthDetect::loop();
+                        touchButtonsUpdate();
+                        if (DeauthDetect::isExitRequested()) feature_exit_requested = true;
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+
+                    if (DeauthDetect::isEvilTwinRequested()) {
+                        char ssid[33];
+                        strncpy(ssid, DeauthDetect::getSelectedSSID(), 32);
+                        ssid[32] = '\0';
+                        DeauthDetect::clearEvilTwinRequest();
+                        DeauthDetect::cleanup();
+
+                        CaptivePortal::setSSID(ssid);
+                        CaptivePortal::setup();
+                        feature_exit_requested = false;
+                        while (!feature_exit_requested) {
+                            CaptivePortal::loop();
+                            touchButtonsUpdate();
+                            if (CaptivePortal::isExitRequested()) feature_exit_requested = true;
+                            if (isBackButtonTapped()) feature_exit_requested = true;
+                            if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                        }
+                        CaptivePortal::cleanup();
+                    } else {
+                        DeauthDetect::cleanup();
+                    }
+                    break;
+                case 4:
+                    WifiScan::setup();
+                    while (!feature_exit_requested) {
+                        WifiScan::loop();
+                        if (WifiScan::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+
+                    if (WifiScan::isDeauthRequested()) {
+
+                        char bssid[18];
+                        strncpy(bssid, WifiScan::getSelectedBSSID(), 17);
+                        bssid[17] = '\0';
+                        char ssid[33];
+                        strncpy(ssid, WifiScan::getSelectedSSID(), 32);
+                        ssid[32] = '\0';
+                        int channel = WifiScan::getSelectedChannel();
+                        WifiScan::clearAttackRequest();
+                        WifiScan::cleanup();
+                        Deauther::setTarget(bssid, ssid, channel);
+                        Deauther::setup();
+                        feature_exit_requested = false;
+                        while (!feature_exit_requested) {
+                            Deauther::loop();
+                            touchButtonsUpdate();
+                            if (Deauther::isExitRequested()) feature_exit_requested = true;
+                            if (isBackButtonTapped()) feature_exit_requested = true;
+                            if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                        }
+                        Deauther::cleanup();
+                    } else if (WifiScan::isCloneRequested()) {
+                        char ssid[33];
+                        strncpy(ssid, WifiScan::getSelectedSSID(), 32);
+                        ssid[32] = '\0';
+                        WifiScan::clearAttackRequest();
+                        WifiScan::cleanup();
+                        CaptivePortal::setSSID(ssid);
+                        CaptivePortal::setup();
+                        feature_exit_requested = false;
+                        while (!feature_exit_requested) {
+                            CaptivePortal::loop();
+                            touchButtonsUpdate();
+                            if (CaptivePortal::isExitRequested()) feature_exit_requested = true;
+                            if (isBackButtonTapped()) feature_exit_requested = true;
+                            if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                        }
+                        CaptivePortal::cleanup();
+                    } else {
+                        WifiScan::cleanup();
+                    }
+                    break;
+                case 5:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    CaptivePortal::setup();
+                    while (!feature_exit_requested) {
+                        CaptivePortal::loop();
+                        touchButtonsUpdate();
+                        if (CaptivePortal::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    CaptivePortal::cleanup();
+                    break;
+                case 6:
+                    StationScan::setup();
+                    while (!feature_exit_requested) {
+                        StationScan::loop();
+                        if (StationScan::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+
+                    if (StationScan::isDeauthRequested()) {
+
+
+                        int selCount = StationScan::getSelectedCount();
+                        StationScan::clearDeauthRequest();
+                        StationScan::cleanup();
+
+
+                        Deauther::setup();
+                        feature_exit_requested = false;
+                        while (!feature_exit_requested) {
+                            Deauther::loop();
+                            touchButtonsUpdate();
+                            if (Deauther::isExitRequested()) feature_exit_requested = true;
+                            if (isBackButtonTapped()) feature_exit_requested = true;
+                            if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                        }
+                        Deauther::cleanup();
+                    } else {
+                        StationScan::cleanup();
+                    }
+                    break;
+                case 7:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    AuthFlood::setup();
+                    while (!feature_exit_requested) {
+                        AuthFlood::loop();
+                        if (AuthFlood::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(200); feature_exit_requested = true; }
+                    }
+                    AuthFlood::cleanup();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+
+
+
+
+void handleBluetoothSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 8) {
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    BleJammer::setup();
+                    while (!feature_exit_requested) {
+                        BleJammer::loop();
+                        if (BleJammer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    BleJammer::cleanup();
+                    break;
+                case 1:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    BleSpoofer::setup();
+                    while (!feature_exit_requested) {
+                        BleSpoofer::loop();
+                        if (BleSpoofer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    BleSpoofer::cleanup();
+                    break;
+                case 2:
+                    BleBeacon::setup();
+                    while (!feature_exit_requested) {
+                        BleBeacon::loop();
+                        if (BleBeacon::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    BleBeacon::cleanup();
+                    break;
+                case 3:
+                    BleSniffer::setup();
+                    while (!feature_exit_requested) {
+                        BleSniffer::loop();
+                        if (BleSniffer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    BleSniffer::cleanup();
+                    break;
+                case 4:
+                    BleScan::setup();
+                    while (!feature_exit_requested) {
+                        BleScan::loop();
+                        if (BleScan::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    BleScan::cleanup();
+                    break;
+                case 5:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    WhisperPair::setup();
+                    while (!feature_exit_requested) {
+                        WhisperPair::loop();
+                        if (WhisperPair::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    WhisperPair::cleanup();
+                    break;
+                case 6:
+                    handleAirTagHubTouch();
+                    break;
+                case 7:
+                    LunaticFringe::setup();
+                    while (!feature_exit_requested) {
+                        LunaticFringe::loop();
+                        if (LunaticFringe::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    LunaticFringe::cleanup();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+
+
+
+
+void handleAirTagHubTouch() {
+
+    active_submenu_items = (const char **)airtag_submenu_items_flash;
+    active_submenu_size = airtag_NUM_SUBMENU_ITEMS;
+    active_submenu_icons = (const unsigned char **)airtag_submenu_icons_flash;
+    current_submenu_index = 0;
+    submenu_initialized = false;
+    displaySubmenu();
+    delay(200);
+
+    bool in_airtag_hub = true;
+    while (in_airtag_hub) {
+        touchButtonsUpdate();
+
+
+        if (isBackButtonTapped()) {
+            break;
+        }
+
+        for (int i = 0; i < airtag_NUM_SUBMENU_ITEMS; i++) {
+            int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+            if (i == airtag_NUM_SUBMENU_ITEMS - 1) yPos += SUBMENU_LAST_GAP;
+
+            if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+                current_submenu_index = i;
+                last_interaction_time = millis();
+                displaySubmenu();
+                delay(200);
+
+                if (current_submenu_index == 3) {
+                    in_airtag_hub = false;
+                    break;
+                }
+
+                feature_active = true;
+                feature_exit_requested = false;
+                waitForTouchRelease();
+
+                switch (current_submenu_index) {
+                    case 0:
+                        AirTagDetect::setup();
+                        while (!feature_exit_requested) {
+                            AirTagDetect::loop();
+                            if (AirTagDetect::isExitRequested()) feature_exit_requested = true;
+                            touchButtonsUpdate();
+                            if (isBackButtonTapped()) feature_exit_requested = true;
+                            if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                        }
+                        AirTagDetect::cleanup();
+                        break;
+                    case 1:
+                        if (!isOffensiveAllowed()) {
+                            if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                            else if (!showDisclaimerScreen()) break;
+                            if (!isOffensiveAllowed()) break;
+                        }
+                        PhantomFlood::setup();
+                        while (!feature_exit_requested) {
+                            PhantomFlood::loop();
+                            if (PhantomFlood::isExitRequested()) feature_exit_requested = true;
+                            touchButtonsUpdate();
+                            if (isBackButtonTapped()) feature_exit_requested = true;
+                            if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                        }
+                        PhantomFlood::cleanup();
+                        break;
+                    case 2:
+                        if (!isOffensiveAllowed()) {
+                            if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                            else if (!showDisclaimerScreen()) break;
+                            if (!isOffensiveAllowed()) break;
+                        }
+                        AirTagReplay::setup();
+                        while (!feature_exit_requested) {
+                            AirTagReplay::loop();
+                            if (AirTagReplay::isExitRequested()) feature_exit_requested = true;
+                            touchButtonsUpdate();
+                            if (isBackButtonTapped()) feature_exit_requested = true;
+                            if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                        }
+                        AirTagReplay::cleanup();
+                        break;
+                }
+
+
+                feature_active = false;
+                feature_exit_requested = false;
+                active_submenu_items = (const char **)airtag_submenu_items_flash;
+                active_submenu_size = airtag_NUM_SUBMENU_ITEMS;
+                active_submenu_icons = (const unsigned char **)airtag_submenu_icons_flash;
+                current_submenu_index = 0;
+                submenu_initialized = false;
+                displaySubmenu();
+                delay(200);
+                break;
+            }
+        }
+    }
+
+
+    active_submenu_items = bluetooth_submenu_items;
+    active_submenu_size = bluetooth_NUM_SUBMENU_ITEMS;
+    active_submenu_icons = bluetooth_submenu_icons;
+    current_submenu_index = 0;
+    submenu_initialized = false;
+}
+
+
+
+
+
+void handleNRFSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 6) {
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0:
+                    Scanner::scannerSetup();
+                    while (!feature_exit_requested) {
+                        Scanner::scannerLoop();
+                        if (Scanner::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    Scanner::cleanup();
+                    break;
+                case 1:
+                    Analyzer::analyzerSetup();
+                    while (!feature_exit_requested) {
+                        Analyzer::analyzerLoop();
+                        if (Analyzer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    Analyzer::cleanup();
+                    break;
+                case 2:
+                    NrfSniffer::setup();
+                    while (!feature_exit_requested) {
+                        NrfSniffer::loop();
+                        if (NrfSniffer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    NrfSniffer::cleanup();
+                    break;
+                case 3:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    MouseJack::setup();
+                    while (!feature_exit_requested) {
+                        MouseJack::loop();
+                        if (MouseJack::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    MouseJack::cleanup();
+                    break;
+                case 4:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    WLANJammer::wlanjammerSetup();
+                    while (!feature_exit_requested) {
+                        WLANJammer::wlanjammerLoop();
+                        if (WLANJammer::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    WLANJammer::cleanup();
+                    break;
+                case 5:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    ProtoKill::prokillSetup();
+                    while (!feature_exit_requested) {
+                        ProtoKill::prokillLoop();
+                        if (ProtoKill::isExitRequested()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) { delay(50); if (IS_BOOT_PRESSED()) feature_exit_requested = true; }
+                    }
+                    ProtoKill::cleanup();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+
+
+
+
+void handleBadUSBPage() {
+    if (!feature_active) {
+        if (!isOffensiveAllowed()) {
+            if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) { returnToMainMenu(); return; } }
+            else if (!showDisclaimerScreen()) { returnToMainMenu(); return; }
+            if (!isOffensiveAllowed()) { returnToMainMenu(); return; }
+        }
+
+        feature_active = true;
+        feature_exit_requested = false;
+        waitForTouchRelease();
+
+        BadUSB::setup();
+        while (!feature_exit_requested) {
+            BadUSB::loop();
+            if (BadUSB::isExitRequested()) feature_exit_requested = true;
+            touchButtonsUpdate();
+            if (isBackButtonTapped()) feature_exit_requested = true;
+            if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+        }
+        BadUSB::cleanup();
+        returnToMainMenu();
+    }
+}
+
+
+
+
+
+void showSigintPlaceholder(const char* title) {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+    drawGlitchTitle(75, title);
+    drawGlitchStatus(110, "BUILDING...", HALEHOUND_HOTPINK);
+    drawCenteredText(150, "Module under construction", HALEHOUND_MAGENTA, 1);
+
+    while (true) {
+        touchButtonsUpdate();
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) break;
+        delay(50);
+    }
+}
+
+
+
+
+
+void handleSIGINTSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 6) {
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    EapolCapture::setup();
+                    while (!feature_exit_requested) {
+                        EapolCapture::loop();
+                        if (EapolCapture::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+
+
+                    }
+                    EapolCapture::cleanup();
+                    break;
+                case 1:
+                    if (!isOffensiveAllowed()) {
+                        if (blue_team_mode) { showBlueTeamBlockedScreen(); if (!showDisclaimerScreen()) break; }
+                        else if (!showDisclaimerScreen()) break;
+                        if (!isOffensiveAllowed()) break;
+                    }
+                    KarmaAttack::setup();
+                    while (!feature_exit_requested) {
+                        KarmaAttack::loop();
+                        if (KarmaAttack::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    KarmaAttack::cleanup();
+                    break;
+                case 2:
+                    wardrivingScreen();
+                    break;
+                case 3:
+                    SavedCaptures::setup();
+                    while (!feature_exit_requested) {
+                        SavedCaptures::loop();
+                        if (SavedCaptures::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                        touchButtonsUpdate();
+                        if (isBackButtonTapped()) feature_exit_requested = true;
+                    }
+                    SavedCaptures::cleanup();
+                    break;
+                case 4:
+                    IotRecon::setup();
+                    while (!feature_exit_requested) {
+                        IotRecon::loop();
+                        if (IotRecon::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    IotRecon::cleanup();
+                    break;
+                case 5:
+                    LootManager::setup();
+                    while (!feature_exit_requested) {
+                        LootManager::loop();
+                        if (LootManager::isExitRequested()) feature_exit_requested = true;
+                        if (IS_BOOT_PRESSED()) feature_exit_requested = true;
+                    }
+                    LootManager::cleanup();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+
+
+
+
+void handleToolsSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+            waitForTouchRelease();
+
+            if (current_submenu_index == 4) {
+                returnToMainMenu();
+                return;
+            }
+
+
+            if (current_submenu_index == 2) {
+                runTouchCalibration();
+                returnToSubmenu();
+                break;
+            }
+
+
+            if (current_submenu_index == 3) {
+                gpsScreen();
+                returnToSubmenu();
+                break;
+            }
+
+
+            if (current_submenu_index == 0) {
+                serialMonitorScreen();
+                returnToSubmenu();
+                break;
+            }
+
+
+            if (current_submenu_index == 1) {
+                firmwareUpdateScreen();
+                returnToSubmenu();
+                break;
+            }
+        }
+    }
+}
+
+
+
+
+
+void displayBrightnessControl() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+
+    drawGlitchTitle(75, "BRIGHTNESS");
+
+
+    int barX = SCREEN_WIDTH / 8;
+    int barW = SCREEN_WIDTH * 3 / 4;
+    tft.drawRect(barX, SCALE_Y(90), barW, SCALE_H(30), HALEHOUND_MAGENTA);
+    int bar_width = map(brightness_level, 0, 255, 0, barW - 4);
+    tft.fillRect(barX + 2, SCALE_Y(92), bar_width, SCALE_H(26), HALEHOUND_MAGENTA);
+
+
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    int percent = map(brightness_level, 0, 255, 0, 100);
+    tft.setCursor(SCALE_X(90), SCALE_Y(135));
+    tft.printf("%d%%", percent);
+
+
+    tft.setTextSize(1);
+    int btnW = (SCREEN_WIDTH - 30) / 2;
+    int btnL = 10;
+    int btnR = btnL + btnW + 10;
+    tft.fillRect(btnL, SCALE_Y(180), btnW, SCALE_H(40), HALEHOUND_DARK);
+    tft.drawRect(btnL, SCALE_Y(180), btnW, SCALE_H(40), HALEHOUND_MAGENTA);
+    tft.setCursor(btnL + SCALE_X(20), SCALE_Y(195));
+    tft.print("DARKER");
+
+    tft.fillRect(btnR, SCALE_Y(180), btnW, SCALE_H(40), HALEHOUND_DARK);
+    tft.drawRect(btnR, SCALE_Y(180), btnW, SCALE_H(40), HALEHOUND_MAGENTA);
+    tft.setCursor(btnR + SCALE_X(15), SCALE_Y(195));
+    tft.print("BRIGHTER");
+}
+
+void brightnessControlLoop() {
+    displayBrightnessControl();
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+
+        if (isTouchInArea(30, SCALE_Y(180), 80, SCALE_H(40))) {
+            brightness_level = max(10, brightness_level - 25);
+            ledcWrite(0, brightness_level);
+            displayBrightnessControl();
+            delay(150);
+        }
+
+
+        if (isTouchInArea(130, SCALE_Y(180), 80, SCALE_H(40))) {
+            brightness_level = min(255, brightness_level + 25);
+            ledcWrite(0, brightness_level);
+            displayBrightnessControl();
+            delay(150);
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+int getTimeoutOptionIndex() {
+    for (int i = 0; i < numTimeoutOptions; i++) {
+        if (timeoutOptions[i] == screen_timeout_seconds) return i;
+    }
+    return 1;
+}
+
+void displayTimeoutControl() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(75, "TIMEOUT");
+
+    int sw = tft.width();
+    int boxX = 30;
+    int boxW = sw - 60;
+
+
+    int idx = getTimeoutOptionIndex();
+    tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(40), 6, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+    int tw = strlen(timeoutLabels[idx]) * 12;
+    tft.setCursor((sw - tw) / 2, SCALE_Y(105));
+    tft.print(timeoutLabels[idx]);
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL, TFT_BLACK);
+    tft.setCursor(boxX + 8, SCALE_Y(110));
+    tft.print("<");
+    tft.setCursor(boxX + boxW - 12, SCALE_Y(110));
+    tft.print(">");
+
+
+    int btnW = (sw - 30) / 2;
+    int btnL = 10;
+    int btnR = btnL + btnW + 10;
+    tft.fillRect(btnL, SCALE_Y(160), btnW, SCALE_H(40), HALEHOUND_DARK);
+    tft.drawRect(btnL, SCALE_Y(160), btnW, SCALE_H(40), HALEHOUND_MAGENTA);
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(btnL + (btnW - strlen("SHORTER") * 6) / 2, SCALE_Y(175));
+    tft.print("SHORTER");
+
+    tft.fillRect(btnR, SCALE_Y(160), btnW, SCALE_H(40), HALEHOUND_DARK);
+    tft.drawRect(btnR, SCALE_Y(160), btnW, SCALE_H(40), HALEHOUND_MAGENTA);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(btnR + (btnW - strlen("LONGER") * 6) / 2, SCALE_Y(175));
+    tft.print("LONGER");
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    if (screen_timeout_seconds == 0) {
+        tft.setCursor(boxX + 10, SCALE_Y(230));
+        tft.print("Screen stays on always");
+    } else {
+        tft.setCursor(boxX, SCALE_Y(230));
+        tft.print("Screen dims after inactivity");
+    }
+}
+
+void screenTimeoutControlLoop() {
+    displayTimeoutControl();
+
+    int sw = tft.width();
+    int btnW = (sw - 30) / 2;
+    int btnL = 10;
+    int btnR = btnL + btnW + 10;
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+
+        if (isTouchInArea(btnL, SCALE_Y(160), btnW, SCALE_H(40))) {
+            int idx = getTimeoutOptionIndex();
+            if (idx > 0) {
+                idx--;
+                screen_timeout_seconds = timeoutOptions[idx];
+                displayTimeoutControl();
+            }
+            delay(200);
+        }
+
+
+        if (isTouchInArea(btnR, SCALE_Y(160), btnW, SCALE_H(40))) {
+            int idx = getTimeoutOptionIndex();
+            if (idx < numTimeoutOptions - 1) {
+                idx++;
+                screen_timeout_seconds = timeoutOptions[idx];
+                displayTimeoutControl();
+            }
+            delay(200);
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+void displayColorSwap() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(60, "COLORS");
+
+    int sw = tft.width();
+    int boxX = 20;
+    int boxW = sw - 40;
+
+
+    tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(50), 6, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+    const char* modeLabel = color_order_rgb ? "RGB" : "BGR *";
+    int modeTw = strlen(modeLabel) * 12;
+    tft.setCursor((sw - modeTw) / 2, SCALE_Y(108));
+    tft.print(modeLabel);
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(boxX, SCALE_Y(160));
+    tft.print("If colors look wrong (green");
+    tft.setCursor(boxX, SCALE_Y(172));
+    tft.print("instead of pink), tap SWAP.");
+    tft.setCursor(boxX, SCALE_Y(192));
+    tft.print("* = default for most boards");
+
+
+    int btnX = 50;
+    int btnW = sw - 100;
+    tft.fillRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_DARK);
+    tft.drawRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    int btnTw = strlen("SWAP") * 12;
+    tft.setCursor(btnX + (btnW - btnTw) / 2, SCALE_Y(238));
+    tft.print("SWAP");
+}
+
+void colorSwapLoop() {
+    displayColorSwap();
+
+    int btnX = 50;
+    int btnW = tft.width() - 100;
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+
+        if (isTouchInArea(btnX, SCALE_Y(225), btnW, SCALE_H(45))) {
+            color_order_rgb = !color_order_rgb;
+            applyColorOrder();
+            saveSettings();
+            displayColorSwap();
+            delay(300);
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+void displayInvertScreen() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(60, "INVERT");
+
+    int sw = tft.width();
+    int boxX = 20;
+    int boxW = sw - 40;
+
+
+    tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(50), 6, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+    const char* modeLabel = display_inverted ? "INVERTED" : "NORMAL *";
+    int modeTw = strlen(modeLabel) * 12;
+    tft.setCursor((sw - modeTw) / 2, SCALE_Y(108));
+    tft.print(modeLabel);
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(boxX, SCALE_Y(160));
+    tft.print("If colors are washed out or");
+    tft.setCursor(boxX, SCALE_Y(172));
+    tft.print("inverted, tap TOGGLE.");
+    tft.setCursor(boxX, SCALE_Y(192));
+    tft.print("* = default for most boards");
+
+
+    int btnX = 50;
+    int btnW = sw - 100;
+    tft.fillRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_DARK);
+    tft.drawRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    int btnTw = strlen("TOGGLE") * 12;
+    tft.setCursor(btnX + (btnW - btnTw) / 2, SCALE_Y(238));
+    tft.print("TOGGLE");
+}
+
+void invertDisplayLoop() {
+    displayInvertScreen();
+
+    int btnX = 50;
+    int btnW = tft.width() - 100;
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+
+        if (isTouchInArea(btnX, SCALE_Y(225), btnW, SCALE_H(45))) {
+            display_inverted = !display_inverted;
+            tft.invertDisplay(display_inverted);
+            saveSettings();
+            displayInvertScreen();
+            delay(300);
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+
+void colorModeScreen() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(60, "COLORS");
+
+    int sw = tft.width();
+    int boxX = 20;
+    int boxW = sw - 40;
+
+
+    tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(50), 6, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+    const char* modeNames[] = {"DEFAULT", "COLORBLIND", "HI-CONTRAST"};
+    const char* modeName = (color_mode < 3) ? modeNames[color_mode] : modeNames[0];
+    int nameLen = strlen(modeName);
+    int nameX = (sw - nameLen * 12) / 2;
+    tft.setCursor(nameX, SCALE_Y(108));
+    tft.print(modeName);
+
+
+    int swatchGap = 7;
+    int swatchW = (boxW - 5 * swatchGap) / 6;
+    int swatchH = 20;
+    int swatchY = SCALE_Y(155);
+    uint16_t swatches[] = {HALEHOUND_MAGENTA, HALEHOUND_HOTPINK, HALEHOUND_BRIGHT,
+                           HALEHOUND_VIOLET, HALEHOUND_MAGENTA, HALEHOUND_GREEN};
+    for (int i = 0; i < 6; i++) {
+        int sx = boxX + i * (swatchW + swatchGap);
+        tft.fillRect(sx, swatchY, swatchW, swatchH, swatches[i]);
+        tft.drawRect(sx, swatchY, swatchW, swatchH, HALEHOUND_GUNMETAL);
+    }
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(boxX, SCALE_Y(185));
+    tft.print("Tap NEXT to cycle modes.");
+    tft.setCursor(boxX, SCALE_Y(197));
+    tft.print("Changes apply instantly.");
+
+
+    int btnX = 50;
+    int btnW = sw - 100;
+    tft.fillRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_DARK);
+    tft.drawRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    int btnTw = strlen("NEXT") * 12;
+    tft.setCursor(btnX + (btnW - btnTw) / 2, SCALE_Y(238));
+    tft.print("NEXT");
+}
+
+void colorModeLoop() {
+    colorModeScreen();
+
+    int btnX = 50;
+    int btnW = tft.width() - 100;
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+
+        if (isTouchInArea(btnX, SCALE_Y(225), btnW, SCALE_H(45))) {
+            color_mode = (color_mode + 1) % 3;
+            applyColorMode(color_mode);
+            saveSettings();
+            colorModeScreen();
+            delay(300);
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+void themeScreen() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(60, "THEME");
+
+    int sw = tft.width();
+    int boxX = 20;
+    int boxW = sw - 40;
+
+    tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(50), 6, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+    const char* themeName = theme_eva02 ? "EVA-02" : "CLASSIC";
+    int nameLen = strlen(themeName);
+    int nameX = (sw - nameLen * 12) / 2;
+    tft.setCursor(nameX, SCALE_Y(108));
+    tft.print(themeName);
+
+
+    int swatchGap = 7;
+    int swatchW = (boxW - 5 * swatchGap) / 6;
+    int swatchH = 20;
+    int swatchY = SCALE_Y(155);
+    uint16_t swatches[] = {HALEHOUND_MAGENTA, HALEHOUND_HOTPINK, HALEHOUND_BRIGHT,
+                           HALEHOUND_VIOLET, HALEHOUND_DARK, HALEHOUND_BLACK};
+    for (int i = 0; i < 6; i++) {
+        int sx = boxX + i * (swatchW + swatchGap);
+        tft.fillRect(sx, swatchY, swatchW, swatchH, swatches[i]);
+        tft.drawRect(sx, swatchY, swatchW, swatchH, HALEHOUND_GUNMETAL);
+    }
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(boxX, SCALE_Y(185));
+    tft.print("Tap NEXT to switch theme.");
+    tft.setCursor(boxX, SCALE_Y(197));
+    tft.print("Only visible in Color Mode: Default.");
+
+    int btnX = 50;
+    int btnW = sw - 100;
+    tft.fillRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_DARK);
+    tft.drawRect(btnX, SCALE_Y(225), btnW, SCALE_H(45), HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    int btnTw = strlen("NEXT") * 12;
+    tft.setCursor(btnX + (btnW - btnTw) / 2, SCALE_Y(238));
+    tft.print("NEXT");
+}
+
+void themeLoop() {
+    themeScreen();
+
+    int btnX = 50;
+    int btnW = tft.width() - 100;
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+
+        if (isTouchInArea(btnX, SCALE_Y(225), btnW, SCALE_H(45))) {
+            applyTheme(!theme_eva02);
+            saveSettings();
+            themeScreen();
+            delay(300);
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+void displayRotationScreen() {
+    int sw = tft.width();
+    int sh = tft.height();
+
+    tft.fillScreen(TFT_BLACK);
+    tft.drawRect(2, 2, sw - 4, sh - 4, HALEHOUND_HOTPINK);
+    tft.drawLine(0, ICON_BAR_TOP, sw, ICON_BAR_TOP, HALEHOUND_MAGENTA);
+    tft.fillRect(0, ICON_BAR_Y, sw, ICON_BAR_H, HALEHOUND_DARK);
+    tft.drawBitmap(10, ICON_BAR_Y, bitmap_icon_go_back, 16, 16, HALEHOUND_MAGENTA);
+    tft.drawLine(0, ICON_BAR_BOTTOM, sw, ICON_BAR_BOTTOM, HALEHOUND_HOTPINK);
+
+    drawGlitchTitle(48, "ROTATION");
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(15, 72);
+    tft.print("Current: ");
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    const char* rotNames[] = {"Standard", "Landscape CW", "Flipped 180", "Landscape CCW"};
+    tft.print(rotNames[screen_rotation]);
+
+
+    const uint8_t rotVals[] = {0, 2};
+    const char* rotLabels[] = {"Standard", "Flipped 180"};
+    const char* rotDescs[] = {"USB at bottom", "USB at top"};
+    int boxW = sw - 40;
+    int boxH = 35;
+    int startY = 88;
+    int gap = 4;
+
+    for (int i = 0; i < 2; i++) {
+        int y = startY + i * (boxH + gap);
+        uint16_t col = (screen_rotation == rotVals[i]) ? HALEHOUND_HOTPINK : HALEHOUND_MAGENTA;
+        tft.drawRect(20, y, boxW, boxH, col);
+        tft.setTextColor(col);
+        tft.setTextSize(2);
+        tft.setCursor(30, y + 4);
+        tft.print(rotLabels[i]);
+        tft.setTextSize(1);
+        tft.setTextColor(TFT_WHITE);
+        tft.setCursor(30, y + 22);
+        tft.print(rotDescs[i]);
+    }
+
+
+    int infoY = startY + 2 * (boxH + gap) + 4;
+    tft.setTextColor(HALEHOUND_VIOLET);
+    tft.setTextSize(1);
+    tft.setCursor(15, infoY);
+    tft.print("Touch recal runs after change.");
+
+    tft.setTextColor(TFT_DARKGREY);
+    tft.setCursor(15, infoY + 16);
+    tft.print("BOOT button = back");
+}
+
+static void applyNewRotation(uint8_t newRot) {
+    extern bool touch_calibrated;
+
+    screen_rotation = newRot;
+    tft.setRotation(newRot);
+    applyColorOrder();
+
+
+    touch_calibrated = false;
+    saveSettings();
+
+
+    runTouchCalibration();
+}
+
+void rotationControlLoop() {
+    displayRotationScreen();
+
+    int sw = tft.width();
+    int boxW = sw - 40;
+    int boxH = 35;
+    int startY = 88;
+    int gap = 4;
+    const uint8_t rotVals[] = {0, 2};
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            break;
+        }
+
+
+        for (int i = 0; i < 2; i++) {
+            int y = startY + i * (boxH + gap);
+            if (isTouchInArea(20, y, boxW, boxH)) {
+                if (screen_rotation != rotVals[i]) {
+                    applyNewRotation(rotVals[i]);
+
+                    sw = tft.width();
+                    boxW = sw - 40;
+                    displayRotationScreen();
+                }
+                delay(300);
+                break;
+            }
+        }
+
+        delay(50);
+    }
+}
+
+
+#define _XK 0x5A
+static void _xd(char*o,const uint8_t*e,uint8_t l){for(uint8_t i=0;i<l;i++)o[i]=pgm_read_byte(&e[i])^_XK;o[l]='\0';}
+static const uint8_t _s1[] PROGMEM = {0x0A,0x08,0x7A,0x79,0x6D,0x6C};
+static const uint8_t _s2[] PROGMEM = {0x08,0x1F,0x19,0x1F,0x13,0x0A,0x0E,0x09};
+static const uint8_t _s3[] PROGMEM = {0x62,0x7A,0x1C,0x3F,0x3B,0x2E,0x2F,0x28,0x3F,0x29,0x7A,0x26,0x7A,0x6B,0x6D,0x7A,0x1C,0x33,0x22,0x3F,0x29,0x7A,0x26,0x7A,0x0E,0x35,0x2F,0x39,0x32};
+static const uint8_t _s4[] PROGMEM = {0x10,0x3B,0x34,0x7A,0x69,0x60,0x7A,0x7A,0x13,0x7A,0x29,0x2F,0x38,0x37,0x33,0x2E,0x2E,0x3F,0x3E,0x7A,0x0A,0x08,0x7A,0x79,0x6D,0x6C};
+static const uint8_t _s5[] PROGMEM = {0x7A,0x7A,0x7A,0x7A,0x7A,0x7A,0x7A,0x7A,0x37,0x23,0x7A,0x71,0x68,0x63,0x6C,0x7A,0x36,0x33,0x34,0x3F,0x29,0x7A,0x35,0x3C,0x7A,0x1C,0x1F,0x14,0x08,0x13,0x08};
+static const uint8_t _s6[] PROGMEM = {0x10,0x3B,0x34,0x7A,0x6E,0x60,0x7A,0x7A,0x37,0x23,0x7A,0x0A,0x08,0x7A,0x19,0x16,0x15,0x09,0x1F,0x1E,0x7A,0x2D,0x75,0x35,0x7A,0x37,0x3F,0x28,0x3D,0x3F};
+static const uint8_t _s7[] PROGMEM = {0x10,0x3B,0x34,0x7A,0x6F,0x60,0x7A,0x7A,0x2C,0x6B,0x74,0x6F,0x74,0x6A,0x7A,0x28,0x3F,0x36,0x3F,0x3B,0x29,0x3F,0x3E};
+static const uint8_t _s8[] PROGMEM = {0x7A,0x7A,0x7A,0x7A,0x7A,0x7A,0x7A,0x7A,0x2D,0x33,0x2E,0x32,0x7A,0x17,0x03,0x7A,0x39,0x35,0x3E,0x3F,0x7A,0x33,0x34,0x29,0x33,0x3E,0x3F};
+static const uint8_t _s9[] PROGMEM = {0x77,0x77,0x77,0x7A,0x1C,0x1F,0x1B,0x0E,0x0F,0x08,0x1F,0x09,0x7A,0x09,0x0F,0x18,0x17,0x13,0x0E,0x0E,0x1F,0x1E,0x7A,0x77,0x77,0x77};
+static const uint8_t _s10[] PROGMEM = {0x68,0x74,0x6E,0x1D,0x12,0x20,0x7A,0x09,0x2A,0x3F,0x39,0x2E,0x28,0x2F,0x37,0x7A,0x1B,0x34,0x3B,0x36,0x23,0x20,0x3F,0x28};
+static const uint8_t _s11[] PROGMEM = {0x0D,0x16,0x1B,0x14,0x7A,0x10,0x3B,0x37,0x37,0x3F,0x28,0x7A,0x72,0x14,0x08,0x1C,0x68,0x6E,0x73};
+static const uint8_t _s12[] PROGMEM = {0x0A,0x28,0x35,0x2E,0x35,0x7A,0x11,0x33,0x36,0x36,0x7A,0x17,0x2F,0x36,0x2E,0x33,0x77,0x0A,0x28,0x35,0x2E,0x35,0x39,0x35,0x36};
+static const uint8_t _s13[] PROGMEM = {0x09,0x2F,0x38,0x1D,0x12,0x20,0x7A,0x18,0x28,0x2F,0x2E,0x3F,0x7A,0x1C,0x35,0x28,0x39,0x3F};
+static const uint8_t _s14[] PROGMEM = {0x18,0x16,0x1F,0x7A,0x09,0x34,0x33,0x3C,0x3C,0x3F,0x28,0x7A,0x2D,0x75,0x7A,0x08,0x09,0x09,0x13};
+static const uint8_t _s15[] PROGMEM = {0x18,0x28,0x33,0x3D,0x32,0x2E,0x34,0x3F,0x29,0x29,0x7A,0x71,0x7A,0x09,0x39,0x28,0x3F,0x3F,0x34,0x7A,0x0E,0x33,0x37,0x3F,0x35,0x2F,0x2E};
+static const uint8_t _s16[] PROGMEM = {0x1C,0x2F,0x36,0x36,0x7A,0x0E,0x35,0x2F,0x39,0x32,0x7A,0x09,0x2F,0x2A,0x2A,0x35,0x28,0x2E};
+static const uint8_t _s17[] PROGMEM = {0x0E,0x1B,0x0A,0x7A,0x1C,0x15,0x08,0x7A,0x17,0x15,0x08,0x1F,0x7A,0x7A,0x01,0x6B,0x75,0x68,0x07};
+static const uint8_t _s18[] PROGMEM = {0x0C,0x1F,0x08,0x18,0x1B,0x0E,0x13,0x17,0x7A,0x19,0x15,0x0A,0x13,0x1F,0x1E};
+static const uint8_t _s19[] PROGMEM = {0x77,0x77,0x77,0x7A,0x6B,0x6D,0x7A,0x18,0x0F,0x1D,0x7A,0x1C,0x13,0x02,0x1F,0x09,0x7A,0x0E,0x1B,0x11,0x1F,0x14,0x7A,0x77,0x77,0x77};
+static const uint8_t _s20[] PROGMEM = {0x1E,0x3F,0x3B,0x2F,0x2E,0x32,0x7A,0x38,0x2F,0x3C,0x3C,0x3F,0x28,0x7A,0x35,0x2C,0x3F,0x28,0x3C,0x36,0x35,0x2D};
+static const uint8_t _s21[] PROGMEM = {0x12,0x13,0x1D,0x12};
+static const uint8_t _s22[] PROGMEM = {0x09,0x2F,0x38,0x1D,0x12,0x20,0x7A,0x2D,0x28,0x35,0x34,0x3D,0x7A,0x37,0x35,0x3E,0x2F,0x36,0x3B,0x2E,0x33,0x35,0x34};
+static const uint8_t _s23[] PROGMEM = {0x1D,0x36,0x35,0x38,0x3B,0x36,0x7A,0x33,0x34,0x33,0x2E,0x7A,0x28,0x3B,0x39,0x3F,0x7A,0x39,0x35,0x34,0x3E,0x33,0x2E,0x33,0x35,0x34};
+static const uint8_t _s24[] PROGMEM = {0x0A,0x28,0x35,0x3C,0x33,0x36,0x3F,0x7A,0x3E,0x3F,0x36,0x3F,0x2E,0x3F,0x7A,0x2F,0x34,0x3E,0x3F,0x28,0x3C,0x36,0x35,0x2D};
+static const uint8_t _s25[] PROGMEM = {0x17,0x33,0x29,0x29,0x33,0x34,0x3D,0x7A,0x32,0x3F,0x3B,0x3E,0x3F,0x28,0x7A,0x3D,0x2F,0x3B,0x28,0x3E,0x29};
+static const uint8_t _s26[] PROGMEM = {0x71,0x6B,0x6A,0x7A,0x37,0x35,0x28,0x3F,0x7A,0x39,0x36,0x3F,0x3B,0x34,0x2F,0x2A,0x7A,0x3C,0x33,0x22,0x3F,0x29};
+static const uint8_t _s27[] PROGMEM = {0x77,0x77,0x77,0x7A,0x12,0x0D,0x7A,0x1C,0x13,0x02,0x1F,0x09,0x7A,0x0D,0x1F,0x7A,0x1C,0x15,0x0F,0x14,0x1E,0x7A,0x77,0x77,0x77};
+static const uint8_t _s28[] PROGMEM = {0x1D,0x1E,0x15,0x6A,0x75,0x1D,0x1E,0x15,0x68,0x7A,0x0E,0x02,0x75,0x08,0x02,0x7A,0x09,0x0D,0x1B,0x0A,0x0A,0x1F,0x1E};
+static const uint8_t _s29[] PROGMEM = {0x1C,0x13,0x02,0x1F,0x1E};
+static const uint8_t _s30[] PROGMEM = {0x14,0x08,0x1C,0x68,0x6E,0x7A,0x2A,0x33,0x34,0x7A,0x39,0x35,0x34,0x3C,0x36,0x33,0x39,0x2E};
+static const uint8_t _s31[] PROGMEM = {0x0C,0x68,0x7A,0x2A,0x33,0x34,0x7A,0x37,0x3B,0x2A,0x2A,0x33,0x34,0x3D,0x29,0x7A,0x3C,0x33,0x3D,0x2F,0x28,0x3F,0x3E,0x7A,0x35,0x2F,0x2E};
+static const uint8_t _s32[] PROGMEM = {0x09,0x19,0x08,0x1F,0x1F,0x14,0x05,0x12,0x1F,0x13,0x1D,0x12,0x0E,0x7A,0x6C,0x6E,0x77,0x64,0x69,0x68,0x6A};
+static const uint8_t _s33[] PROGMEM = {0x1B,0x2E,0x2E,0x28,0x33,0x38,0x2F,0x2E,0x33,0x35,0x34,0x7A,0x3D,0x33,0x2C,0x3F,0x34,0x60};
+static const uint8_t _s34[] PROGMEM = {0x00,0x1F,0x08,0x15,0x74,0x7A,0x14,0x15,0x14,0x1F,0x74};
+static const uint8_t _s35[] PROGMEM = {0x08,0x3F,0x37,0x3F,0x37,0x38,0x3F,0x28,0x74,0x7A,0x13,0x7A,0x38,0x2F,0x33,0x36,0x2E,0x7A,0x2E,0x32,0x33,0x29,0x74};
+static const uint8_t _s36[] PROGMEM = {0x18,0x1B,0x19,0x11,0x7A,0x0E,0x15,0x7A,0x1F,0x02,0x13,0x0E,0x7A,0x7A,0x01,0x68,0x75,0x68,0x07};
+
+void _svcRenderDiag() {
+    tft.fillScreen(TFT_BLACK);
+    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0xA800);
+    tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_HOTPINK);
+    tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_VIOLET);
+    tft.drawLine(0, 19, SCREEN_WIDTH, 19, HALEHOUND_MAGENTA);
+    tft.fillRect(0, 20, SCREEN_WIDTH, 16, HALEHOUND_DARK);
+    tft.drawBitmap(10, 20, bitmap_icon_go_back, 16, 16, HALEHOUND_MAGENTA);
+    tft.drawLine(0, 36, SCREEN_WIDTH, 36, HALEHOUND_HOTPINK);
+}
+
+void _svcDiagA() {
+    char _b[32];
+    _svcRenderDiag();
+    _xd(_b, _s1, sizeof(_s1)); drawGlitchTitle(48, _b);
+
+    tft.setTextSize(1);
+    int y = 68;
+
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(18, y);
+    _xd(_b, _s3, sizeof(_s3)); tft.print(_b);
+    y += 18;
+
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(10, y); _xd(_b, _s4, sizeof(_s4)); tft.print(_b);
+    y += 13;
+    tft.setCursor(10, y); _xd(_b, _s5, sizeof(_s5)); tft.print(_b);
+    y += 16;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s6, sizeof(_s6)); tft.print(_b);
+    y += 16;
+
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(10, y); _xd(_b, _s7, sizeof(_s7)); tft.print(_b);
+    y += 13;
+    tft.setCursor(10, y); _xd(_b, _s8, sizeof(_s8)); tft.print(_b);
+    y += 20;
+
+    tft.setTextColor(HALEHOUND_VIOLET);
+    tft.setCursor(10, y); _xd(_b, _s9, sizeof(_s9)); tft.print(_b);
+    y += 14;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s10, sizeof(_s10)); tft.print(_b);
+    y += 12;
+    tft.setCursor(10, y); _xd(_b, _s11, sizeof(_s11)); tft.print(_b);
+    y += 12;
+    tft.setCursor(10, y); _xd(_b, _s12, sizeof(_s12)); tft.print(_b);
+    y += 12;
+    tft.setCursor(10, y); _xd(_b, _s13, sizeof(_s13)); tft.print(_b);
+    y += 12;
+    tft.setCursor(10, y); _xd(_b, _s14, sizeof(_s14)); tft.print(_b);
+    y += 12;
+    tft.setCursor(10, y); _xd(_b, _s15, sizeof(_s15)); tft.print(_b);
+    y += 12;
+    tft.setCursor(10, y); _xd(_b, _s16, sizeof(_s16)); tft.print(_b);
+    y += 18;
+
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(50, 305);
+    _xd(_b, _s17, sizeof(_s17)); tft.print(_b);
+}
+
+void _svcDiagB() {
+    char _b[32];
+    _svcRenderDiag();
+    _xd(_b, _s2, sizeof(_s2)); drawGlitchTitle(48, _b);
+
+    tft.setTextSize(2);
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, 68);
+    _xd(_b, _s18, sizeof(_s18)); tft.print(_b);
+
+    tft.setTextSize(1);
+    int y = 88;
+
+    tft.setTextColor(HALEHOUND_VIOLET);
+    tft.setCursor(10, y); _xd(_b, _s19, sizeof(_s19)); tft.print(_b);
+    y += 14;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s20, sizeof(_s20)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(190, y); _xd(_b, _s21, sizeof(_s21)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s22, sizeof(_s22)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(190, y); _xd(_b, _s21, sizeof(_s21)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s23, sizeof(_s23)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(190, y); _xd(_b, _s21, sizeof(_s21)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s24, sizeof(_s24)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(190, y); _xd(_b, _s21, sizeof(_s21)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s25, sizeof(_s25)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(190, y); _xd(_b, _s21, sizeof(_s21)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s26, sizeof(_s26)); tft.print(_b);
+    y += 18;
+
+    tft.setTextColor(HALEHOUND_VIOLET);
+    tft.setCursor(10, y); _xd(_b, _s27, sizeof(_s27)); tft.print(_b);
+    y += 14;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s28, sizeof(_s28)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(170, y); _xd(_b, _s29, sizeof(_s29)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s30, sizeof(_s30)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(170, y); _xd(_b, _s29, sizeof(_s29)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s31, sizeof(_s31)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(170, y); _xd(_b, _s29, sizeof(_s29)); tft.print(_b);
+    y += 12;
+
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(10, y); _xd(_b, _s32, sizeof(_s32)); tft.print(_b);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(170, y); _xd(_b, _s29, sizeof(_s29)); tft.print(_b);
+    y += 18;
+
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(10, y); _xd(_b, _s33, sizeof(_s33)); tft.print(_b);
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(130, y); _xd(_b, _s34, sizeof(_s34)); tft.print(_b);
+    y += 18;
+
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(18, y);
+    _xd(_b, _s35, sizeof(_s35)); tft.print(_b);
+
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(68, 305);
+    _xd(_b, _s36, sizeof(_s36)); tft.print(_b);
+}
+
+void _svcRunDiag() {
+    int page = 1;
+    _svcDiagA();
+
+    while (true) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) break;
+
+        uint16_t tx, ty;
+        if (getTouchPoint(&tx, &ty)) {
+            if (ty > 36) {
+                if (page == 1) {
+                    page = 2;
+                    _svcDiagB();
+                } else {
+                    page = 1;
+                    _svcDiagA();
+                }
+                delay(300);
+            }
+        }
+
+        delay(50);
+    }
+}
+
+void displayDeviceInfo() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(70, "DEV INFO");
+
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setTextSize(1);
+    int y = 75;
+
+    tft.setCursor(10, y); tft.print("Device: " FW_DEVICE);
+    y += 18;
+    tft.setCursor(10, y); tft.print("Version: " FW_FULL_VERSION);
+    y += 18;
+    tft.setCursor(10, y); tft.print("By: EVAWARE (marawda)");
+    y += 18;
+    tft.setCursor(10, y); tft.print("Based on ESP32-DIV (forked)");
+    y += 18;
+    tft.setCursor(10, y); tft.printf("Free Heap: %d", ESP.getFreeHeap());
+    y += 18;
+    tft.setCursor(10, y); tft.printf("CPU Freq: %dMHz", ESP.getCpuFreqMHz());
+    y += 18;
+    tft.setCursor(10, y); tft.printf("Flash: %dMB", ESP.getFlashChipSize() / 1024 / 1024);
+    y += 18;
+    tft.setCursor(10, y); tft.print("Board: " CYD_BOARD_NAME);
+    y += 18;
+
+    tft.setTextColor(HALEHOUND_VIOLET);
+    tft.setCursor(10, y + 15);
+    tft.print("GitHub: github.com/MARAWDA big thanks to github.com/JesseCHale");
+
+    int _dC = 0;
+    unsigned long _dT = 0;
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            break;
+        }
+
+        if (isTouchInArea(10, 107, 200, 18)) {
+            unsigned long now = millis();
+            if (now - _dT < 800) {
+                _dC++;
+            } else {
+                _dC = 1;
+            }
+            _dT = now;
+
+            if (_dC >= 5) {
+                _svcRunDiag();
+                _dC = 0;
+
+                tft.fillScreen(TFT_BLACK);
+                drawStatusBar();
+                drawInoIconBar();
+                drawGlitchTitle(70, "DEV INFO");
+
+                tft.setTextColor(HALEHOUND_MAGENTA);
+                tft.setTextSize(1);
+                y = 75;
+                tft.setCursor(10, y); tft.print("Device: " FW_DEVICE);
+                y += 18;
+                tft.setCursor(10, y); tft.print("Version: " FW_FULL_VERSION);
+                y += 18;
+                tft.setCursor(10, y); tft.print("By: EVAWARE (marawda)");
+                y += 18;
+                tft.setCursor(10, y); tft.print("Based on ESP32-DIV (forked)");
+                y += 18;
+                tft.setCursor(10, y); tft.printf("Free Heap: %d", ESP.getFreeHeap());
+                y += 18;
+                tft.setCursor(10, y); tft.printf("CPU Freq: %dMHz", ESP.getCpuFreqMHz());
+                y += 18;
+                tft.setCursor(10, y); tft.printf("Flash: %dMB", ESP.getFlashChipSize() / 1024 / 1024);
+                y += 18;
+                tft.setCursor(10, y); tft.print("Board: " CYD_BOARD_NAME);
+                y += 18;
+                tft.setTextColor(HALEHOUND_VIOLET);
+                tft.setCursor(10, y + 15);
+                tft.print("GitHub: https://github.com/MARAWDA");
+            }
+            delay(200);
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+void displayNRF24PowerScreen() {
+    tft.fillScreen(TFT_BLACK);
+    drawStatusBar();
+    drawInoIconBar();
+
+    drawGlitchTitle(60, "NRF24 POWER");
+
+    int sw = tft.width();
+    int boxX = 20;
+    int boxW = sw - 40;
+
+
+    tft.drawRoundRect(boxX, SCALE_Y(95), boxW, SCALE_H(50), 6, HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_HOTPINK, TFT_BLACK);
+    const char* modeLabel = nrf24_power_high ? "HIGH" : "LOW";
+    int modeTw = strlen(modeLabel) * 12;
+    tft.setCursor((sw - modeTw) / 2, SCALE_Y(108));
+    tft.print(modeLabel);
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    if (nrf24_power_high) {
+        tft.setCursor(boxX, SCALE_Y(160));
+        tft.print("Best range / signal strength");
+        tft.setCursor(boxX, SCALE_Y(172));
+        tft.print("Higher current draw — may");
+        tft.setCursor(boxX, SCALE_Y(184));
+        tft.print("brownout on weak power/wiring");
+    } else {
+        tft.setCursor(boxX, SCALE_Y(160));
+        tft.print("Reduced range / signal strength");
+        tft.setCursor(boxX, SCALE_Y(172));
+        tft.print("Lower current draw — most");
+        tft.setCursor(boxX, SCALE_Y(184));
+        tft.print("stable on flaky NRF24 modules");
+    }
+
+
+    int btnX = 50;
+    int btnW = sw - 100;
+    tft.fillRect(btnX, SCALE_Y(230), btnW, SCALE_H(45), HALEHOUND_DARK);
+    tft.drawRect(btnX, SCALE_Y(230), btnW, SCALE_H(45), HALEHOUND_MAGENTA);
+    tft.setTextSize(2);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    int btnTw = strlen("TOGGLE") * 12;
+    tft.setCursor(btnX + (btnW - btnTw) / 2, SCALE_Y(243));
+    tft.print("TOGGLE");
+}
+
+void nrf24PowerLoop() {
+    displayNRF24PowerScreen();
+
+    int btnX = 50;
+    int btnW = tft.width() - 100;
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            saveSettings();
+            break;
+        }
+
+
+        if (isTouchInArea(btnX, SCALE_Y(230), btnW, SCALE_H(45))) {
+            nrf24_power_high = !nrf24_power_high;
+
+
+            if (nrf24IsActive()) {
+                nrf24SetPower(nrf24_power_high ? RF24_PA_HIGH : RF24_PA_LOW);
+            }
+            Serial.printf("[NRF24] Power level set to %s\n", nrf24_power_high ? "HIGH" : "LOW");
+
+            saveSettings();
+            displayNRF24PowerScreen();
+            delay(300);
+        }
+
+        delay(50);
+    }
+}
+
+void handleSettingsSubmenuTouch() {
+    touchButtonsUpdate();
+
+    if (isBackButtonTapped()) {
+        returnToMainMenu();
+        return;
+    }
+
+    for (int i = 0; i < active_submenu_size; i++) {
+        int yPos = SUBMENU_Y_START + i * SUBMENU_Y_SPACING;
+        if (i == active_submenu_size - 1) yPos += SUBMENU_LAST_GAP;
+
+        if (isTouchInArea(10, yPos, SUBMENU_TOUCH_W, SUBMENU_TOUCH_H)) {
+            current_submenu_index = i;
+            last_interaction_time = millis();
+            displaySubmenu();
+            delay(200);
+
+            if (current_submenu_index == 10) {
+                returnToMainMenu();
+                return;
+            }
+
+            feature_active = true;
+            feature_exit_requested = false;
+            waitForTouchRelease();
+
+            switch (current_submenu_index) {
+                case 0:
+                    brightnessControlLoop();
+                    break;
+                case 1:
+                    screenTimeoutControlLoop();
+                    break;
+                case 2:
+                    colorSwapLoop();
+                    break;
+                case 3:
+                    invertDisplayLoop();
+                    break;
+                case 4:
+                    colorModeLoop();
+                    break;
+                case 5:
+                    themeLoop();
+                    break;
+                case 6:
+                    rotationControlLoop();
+                    break;
+                case 7:
+                    displayDeviceInfo();
+                    break;
+                case 8:
+                    pinSetupLoop();
+                    break;
+                case 9:
+                    nrf24PowerLoop();
+                    break;
+            }
+
+            returnToSubmenu();
+            break;
+        }
+    }
+}
+
+
+
+
+
+
+void handleAboutPage() {
+
+    tft.fillScreen(TFT_BLACK);
+
+
+    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);
+
+
+    tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
+    tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_MAGENTA);
+
+
+    tft.drawLine(0, 19, SCREEN_WIDTH, 19, HALEHOUND_MAGENTA);
+    tft.fillRect(0, 20, SCREEN_WIDTH, 16, HALEHOUND_DARK);
+    tft.drawBitmap(10, 20, bitmap_icon_go_back, 16, 16, HALEHOUND_MAGENTA);
+    tft.drawLine(0, 36, SCREEN_WIDTH, 36, HALEHOUND_HOTPINK);
+
+
+    drawGlitchTitle(58, "EVAWARE");
+
+
+    drawGlitchStatus(80, FW_EDITION, HALEHOUND_MAGENTA);
+
+
+    drawCenteredText(90, FW_VERSION, HALEHOUND_VIOLET, 1);
+
+
+    tft.drawLine(20, 100, SCREEN_WIDTH - 20, 100, HALEHOUND_VIOLET);
+
+
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(10, 106);
+    tft.print("ARMED:");
+
+
+    int my = 118;
+    int col1 = 15;
+    int col2 = 125;
+    int rowH = 13;
+
+    tft.setTextColor(HALEHOUND_MAGENTA);
+
+    tft.setCursor(col1, my); tft.print("> WiFi");
+    tft.setCursor(col2, my); tft.print("> Bluetooth");
+    my += rowH;
+    tft.setCursor(col1, my); tft.print("> Recon");
+    tft.setCursor(col2, my); tft.print("> blu usp");
+    my += rowH;
+    tft.setCursor(col1, my); tft.print("> Serial Mon");
+    tft.setCursor(col2, my); tft.print("> GPS");
+    my += rowH;
+    tft.setCursor(col1, my); tft.print("> SD Card");
+    tft.setCursor(col2, my); tft.print("> Valhalla");
+
+
+    my += rowH + 6;
+    tft.drawLine(20, my, SCREEN_WIDTH - 20, my, HALEHOUND_VIOLET);
+    my += 8;
+
+
+    tft.setTextColor(HALEHOUND_HOTPINK);
+    tft.setCursor(10, my);
+    tft.print("SYSTEM:");
+    my += 14;
+
+
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(col1, my);
+    tft.printf("Heap: %d bytes", ESP.getFreeHeap());
+    my += 12;
+    tft.setCursor(col1, my);
+    tft.printf("CPU: %dMHz  Flash: %dMB", ESP.getCpuFreqMHz(), ESP.getFlashChipSize() / 1024 / 1024);
+    my += 12;
+    tft.setCursor(col1, my);
+    tft.print("Board: " CYD_BOARD_NAME);
+
+
+    my += 18;
+    tft.drawLine(20, my, SCREEN_WIDTH - 20, my, HALEHOUND_VIOLET);
+    my += 10;
+
+
+    drawCenteredText(my, "By: marawda (EVAWARE)", HALEHOUND_MAGENTA, 1);
+    my += 14;
+    drawCenteredText(my, "Thanks to github.com/JesseCHale", HALEHOUND_VIOLET, 1);
+
+
+    drawCenteredText(SCREEN_HEIGHT - 18, "I built this.", HALEHOUND_GUNMETAL, 1);
+
+
+    while (true) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            break;
+        }
+
+        delay(50);
+    }
+
+    returnToMainMenu();
+}
+
+
+
+
+
+void showPinLockScreen() {
+
+
+
+
+
+    const int btnW = 68;
+    const int btnH = 38;
+    const int gapX = 4;
+    const int gapY = 4;
+    const int padX = (SCREEN_WIDTH - (3 * btnW + 2 * gapX)) / 2;
+    const int padY = 138;
+    const char* labels[12] = {"1","2","3","4","5","6","7","8","9","CLR","0","OK"};
+
+
+    const int boxW = 36;
+    const int boxH = 40;
+    const int boxGap = 10;
+    const int boxTotalW = 4 * boxW + 3 * boxGap;
+    const int boxStartX = (SCREEN_WIDTH - boxTotalW) / 2;
+    const int boxY = 68;
+
+    uint8_t entered[4] = {0, 0, 0, 0};
+    int digitCount = 0;
+
+    auto drawDigitBoxes = [&]() {
+        for (int d = 0; d < 4; d++) {
+            int bx = boxStartX + d * (boxW + boxGap);
+
+            tft.fillRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_DARK);
+
+            if (d < digitCount) {
+                tft.drawRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_HOTPINK);
+            } else {
+                tft.drawRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_MAGENTA);
+            }
+
+            tft.setTextSize(3);
+            tft.setTextColor(HALEHOUND_HOTPINK);
+            int charW = 18;
+            tft.setCursor(bx + (boxW - charW) / 2, boxY + 10);
+            tft.print(d < digitCount ? "*" : "_");
+        }
+    };
+
+    auto drawPinScreen = [&]() {
+        tft.fillScreen(TFT_BLACK);
+
+
+        tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x1841);
+
+
+        tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
+        tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_MAGENTA);
+
+
+        drawGlitchTitle(48, "LOCKED");
+
+
+        tft.drawLine(20, 55, SCREEN_WIDTH - 20, 55, HALEHOUND_VIOLET);
+
+
+        drawDigitBoxes();
+
+
+        tft.drawLine(20, boxY + boxH + 10, SCREEN_WIDTH - 20, boxY + boxH + 10, HALEHOUND_VIOLET);
+
+
+        for (int i = 0; i < 12; i++) {
+            int col = i % 3;
+            int row = i / 3;
+            int bx = padX + col * (btnW + gapX);
+            int by = padY + row * (btnH + gapY);
+
+
+            if (i == 9 || i == 11) {
+                tft.fillRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_DARK);
+                tft.drawRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_VIOLET);
+                tft.setTextSize(1);
+                tft.setTextColor(HALEHOUND_MAGENTA);
+                int tw = strlen(labels[i]) * 6;
+                tft.setCursor(bx + (btnW - tw) / 2, by + 15);
+                tft.print(labels[i]);
+            } else {
+                tft.fillRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_DARK);
+                tft.drawRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_MAGENTA);
+
+                tft.setTextSize(2);
+                tft.setTextColor(HALEHOUND_HOTPINK);
+                int tw = 12;
+                tft.setCursor(bx + (btnW - tw) / 2, by + 11);
+                tft.print(labels[i]);
+            }
+        }
+    };
+
+    drawPinScreen();
+
+    while (true) {
+        touchButtonsUpdate();
+
+        if (!isTouched()) {
+            delay(30);
+            continue;
+        }
+
+
+        bool tapped = false;
+        for (int i = 0; i < 12; i++) {
+            int col = i % 3;
+            int row = i / 3;
+            int bx = padX + col * (btnW + gapX);
+            int by = padY + row * (btnH + gapY);
+
+            if (isTouchInArea(bx, by, btnW, btnH)) {
+                tapped = true;
+
+                if (i == 9) {
+
+                    digitCount = 0;
+                    drawDigitBoxes();
+                } else if (i == 11) {
+
+                    if (digitCount == 4) {
+                        uint16_t enteredPin = entered[0] * 1000 + entered[1] * 100 + entered[2] * 10 + entered[3];
+                        if (enteredPin == device_pin) {
+
+                            device_locked = false;
+                            return;
+                        } else {
+
+                            for (int flash = 0; flash < 3; flash++) {
+                                for (int d = 0; d < 4; d++) {
+                                    int fbx = boxStartX + d * (boxW + boxGap);
+                                    tft.drawRoundRect(fbx, boxY, boxW, boxH, 4, TFT_RED);
+                                }
+                                delay(100);
+                                for (int d = 0; d < 4; d++) {
+                                    int fbx = boxStartX + d * (boxW + boxGap);
+                                    tft.drawRoundRect(fbx, boxY, boxW, boxH, 4, HALEHOUND_DARK);
+                                }
+                                delay(100);
+                            }
+                            digitCount = 0;
+                            drawDigitBoxes();
+                        }
+                    }
+                } else {
+
+                    if (digitCount < 4) {
+                        int digit = (i == 10) ? 0 : (i + 1);
+                        entered[digitCount] = digit;
+                        digitCount++;
+
+                        drawDigitBoxes();
+                    }
+                }
+                break;
+            }
+        }
+
+        if (tapped) {
+            delay(200);
+        }
+    }
+}
+
+
+int pinEntryScreen(const char* title) {
+
+
+
+
+    const int btnW = 66;
+    const int btnH = 40;
+    const int gapX = 6;
+    const int gapY = 4;
+    const int padX = (SCREEN_WIDTH - (3 * btnW + 2 * gapX)) / 2;
+    const int padY = 128;
+    const char* labels[12] = {"1","2","3","4","5","6","7","8","9","CLR","0","OK"};
+
+
+    const int boxW = 32;
+    const int boxH = 34;
+    const int boxGap = 10;
+    const int boxTotalW = 4 * boxW + 3 * boxGap;
+    const int boxStartX = (SCREEN_WIDTH - boxTotalW) / 2;
+    const int boxY = 76;
+
+    uint8_t entered[4] = {0, 0, 0, 0};
+    int digitCount = 0;
+
+    auto drawDigitBoxes = [&]() {
+        for (int d = 0; d < 4; d++) {
+            int bx = boxStartX + d * (boxW + boxGap);
+            tft.fillRoundRect(bx, boxY, boxW, boxH, 4, HALEHOUND_DARK);
+            tft.drawRoundRect(bx, boxY, boxW, boxH, 4,
+                d < digitCount ? HALEHOUND_HOTPINK : HALEHOUND_MAGENTA);
+
+            tft.setTextSize(2);
+            tft.setTextColor(HALEHOUND_HOTPINK);
+            tft.setCursor(bx + (boxW - 12) / 2, boxY + 9);
+            tft.print(d < digitCount ? "*" : "_");
+        }
+    };
+
+    auto drawScreen = [&]() {
+        tft.fillScreen(TFT_BLACK);
+        drawInoIconBar();
+
+
+        tft.setTextSize(1);
+        tft.setTextColor(HALEHOUND_HOTPINK);
+        int tw = strlen(title) * 6;
+        tft.setCursor((SCREEN_WIDTH - tw) / 2, 44);
+        tft.print(title);
+
+
+        tft.drawLine(30, 56, SCREEN_WIDTH - 30, 56, HALEHOUND_VIOLET);
+
+
+        tft.setTextSize(1);
+        tft.setTextColor(HALEHOUND_GUNMETAL);
+        const char* hint = "Enter 4-digit PIN";
+        int hw = strlen(hint) * 6;
+        tft.setCursor((SCREEN_WIDTH - hw) / 2, 62);
+        tft.print(hint);
+
+
+        drawDigitBoxes();
+
+
+        tft.drawLine(30, boxY + boxH + 6, SCREEN_WIDTH - 30, boxY + boxH + 6, HALEHOUND_VIOLET);
+
+
+        for (int i = 0; i < 12; i++) {
+            int col = i % 3;
+            int row = i / 3;
+            int bx = padX + col * (btnW + gapX);
+            int by = padY + row * (btnH + gapY);
+
+            if (i == 9 || i == 11) {
+
+                tft.fillRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_DARK);
+                tft.drawRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_VIOLET);
+                tft.setTextSize(1);
+                tft.setTextColor(HALEHOUND_MAGENTA);
+                int ltw = strlen(labels[i]) * 6;
+                tft.setCursor(bx + (btnW - ltw) / 2, by + 16);
+                tft.print(labels[i]);
+            } else {
+
+                tft.fillRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_DARK);
+                tft.drawRoundRect(bx, by, btnW, btnH, 5, HALEHOUND_MAGENTA);
+                tft.setTextSize(2);
+                tft.setTextColor(HALEHOUND_HOTPINK);
+                tft.setCursor(bx + (btnW - 12) / 2, by + 12);
+                tft.print(labels[i]);
+            }
+        }
+    };
+
+    drawScreen();
+
+    while (true) {
+        touchButtonsUpdate();
+
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            return -1;
+        }
+
+        if (!isTouched()) {
+            delay(30);
+            continue;
+        }
+
+        bool tapped = false;
+        for (int i = 0; i < 12; i++) {
+            int col = i % 3;
+            int row = i / 3;
+            int bx = padX + col * (btnW + gapX);
+            int by = padY + row * (btnH + gapY);
+
+            if (isTouchInArea(bx, by, btnW, btnH)) {
+                tapped = true;
+
+                if (i == 9) {
+                    digitCount = 0;
+                    drawDigitBoxes();
+                } else if (i == 11) {
+                    if (digitCount == 4) {
+                        return entered[0] * 1000 + entered[1] * 100 + entered[2] * 10 + entered[3];
+                    }
+                } else {
+                    if (digitCount < 4) {
+                        int digit = (i == 10) ? 0 : (i + 1);
+                        entered[digitCount] = digit;
+                        digitCount++;
+                        drawDigitBoxes();
+                    }
+                }
+                break;
+            }
+        }
+
+        if (tapped) {
+            delay(200);
+        }
+    }
+}
+
+
+
+
+
+void pinSetupLoop() {
+    auto drawPinMenu = [&]() {
+        tft.fillScreen(TFT_BLACK);
+        drawStatusBar();
+        drawInoIconBar();
+
+        drawGlitchTitle(65, "SET PIN");
+
+
+        tft.drawLine(20, 72, SCREEN_WIDTH - 20, 72, HALEHOUND_VIOLET);
+
+
+        tft.setTextSize(1);
+        tft.setTextColor(pin_enabled ? HALEHOUND_HOTPINK : HALEHOUND_GUNMETAL);
+        const char* statusText = pin_enabled ? "PIN LOCK: ENABLED" : "PIN LOCK: DISABLED";
+        int sw = strlen(statusText) * 6;
+        tft.setCursor((SCREEN_WIDTH - sw) / 2, 82);
+        tft.print(statusText);
+
+
+        int btnY = 105;
+        int btnW2 = SCREEN_WIDTH - 60;
+        int btnX = 30;
+        tft.fillRoundRect(btnX, btnY, btnW2, 32, 5, HALEHOUND_DARK);
+        tft.drawRoundRect(btnX, btnY, btnW2, 32, 5, HALEHOUND_MAGENTA);
+        tft.setTextSize(1);
+        tft.setTextColor(HALEHOUND_HOTPINK);
+        const char* toggleText = pin_enabled ? "DISABLE PIN" : "ENABLE PIN";
+        int tw = strlen(toggleText) * 6;
+        tft.setCursor(btnX + (btnW2 - tw) / 2, btnY + 12);
+        tft.print(toggleText);
+
+
+        if (pin_enabled) {
+            int btn2Y = 150;
+            tft.fillRoundRect(btnX, btn2Y, btnW2, 32, 5, HALEHOUND_DARK);
+            tft.drawRoundRect(btnX, btn2Y, btnW2, 32, 5, HALEHOUND_MAGENTA);
+            tft.setTextSize(1);
+            tft.setTextColor(HALEHOUND_HOTPINK);
+            const char* changeText = "CHANGE PIN";
+            tw = strlen(changeText) * 6;
+            tft.setCursor(btnX + (btnW2 - tw) / 2, btn2Y + 12);
+            tft.print(changeText);
+        }
+    };
+
+    drawPinMenu();
+
+    while (!feature_exit_requested) {
+        touchButtonsUpdate();
+
+        if (isInoBackTapped() || buttonPressed(BTN_BACK) || buttonPressed(BTN_BOOT)) {
+            feature_exit_requested = true;
+            break;
+        }
+
+        int btnW2 = SCREEN_WIDTH - 60;
+
+
+        if (isTouchInArea(30, 105, btnW2, 32)) {
+            delay(200);
+
+            if (pin_enabled) {
+
+                int entered = pinEntryScreen("VERIFY");
+                if (entered == -1) {
+                    drawPinMenu();
+                    continue;
+                }
+                if ((uint16_t)entered == device_pin) {
+                    pin_enabled = false;
+                    device_pin = 0;
+                    device_locked = false;
+                    saveSettings();
+                    drawPinMenu();
+                } else {
+                    tft.fillScreen(TFT_RED);
+                    drawCenteredText(150, "WRONG PIN", TFT_WHITE, 1);
+                    delay(600);
+                    drawPinMenu();
+                }
+            } else {
+
+                int newPin = pinEntryScreen("NEW PIN");
+                if (newPin == -1) {
+                    drawPinMenu();
+                    continue;
+                }
+
+
+                int confirm = pinEntryScreen("CONFIRM");
+                if (confirm == -1) {
+                    drawPinMenu();
+                    continue;
+                }
+
+                if (newPin == confirm) {
+                    device_pin = (uint16_t)newPin;
+                    pin_enabled = true;
+                    saveSettings();
+                    drawPinMenu();
+                } else {
+                    tft.fillScreen(TFT_RED);
+                    drawCenteredText(150, "MISMATCH", TFT_WHITE, 1);
+                    delay(600);
+                    drawPinMenu();
+                }
+            }
+            continue;
+        }
+
+
+        if (pin_enabled && isTouchInArea(30, 150, btnW2, 32)) {
+            delay(200);
+
+
+            int current = pinEntryScreen("CURRENT");
+            if (current == -1) {
+                drawPinMenu();
+                continue;
+            }
+            if ((uint16_t)current != device_pin) {
+                tft.fillScreen(TFT_RED);
+                drawCenteredText(150, "WRONG PIN", TFT_WHITE, 2);
+                delay(600);
+                drawPinMenu();
+                continue;
+            }
+
+
+            int newPin = pinEntryScreen("NEW PIN");
+            if (newPin == -1) {
+                drawPinMenu();
+                continue;
+            }
+
+
+            int confirm = pinEntryScreen("CONFIRM");
+            if (confirm == -1) {
+                drawPinMenu();
+                continue;
+            }
+
+            if (newPin == confirm) {
+                device_pin = (uint16_t)newPin;
+                saveSettings();
+                drawPinMenu();
+            } else {
+                tft.fillScreen(TFT_RED);
+                drawCenteredText(150, "MISMATCH", TFT_WHITE, 2);
+                delay(600);
+                drawPinMenu();
+            }
+            continue;
+        }
+
+        delay(50);
+    }
+}
+
+
+
+
+
+
+bool isOffensiveAllowed() {
+    return true;
+}
+
+
+
+void showBlueTeamBlockedScreen() {
+}
+
+
+
+bool showDisclaimerScreen() {
+    return true;
+}
+
+
+void recursiveDeleteSD(File dir) {
+    while (true) {
+        File entry = dir.openNextFile();
+        if (!entry) break;
+
+        if (entry.isDirectory()) {
+            recursiveDeleteSD(entry);
+            SD.rmdir(entry.path());
+        } else {
+            SD.remove(entry.path());
+        }
+        entry.close();
+    }
+}
+
+
+void activateValhalla() {
+
+    tft.fillScreen(TFT_BLACK);
+
+
+    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x1841);
+
+
+    tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
+    tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, VALHALLA_BLUE);
+
+
+    int skullX = (SCREEN_WIDTH - 120) / 2;
+    tft.drawBitmap(skullX, SCALE_Y(10), bitmap_disclaimer_skull, 120, 160, TFT_RED);
+
+
+    drawGlitchTitle(SCALE_Y(175), "VALHALLA");
+    drawGlitchStatus(SCALE_Y(195), "PROTOCOL", HALEHOUND_VIOLET);
+
+
+    tft.drawLine(20, SCALE_Y(207), SCREEN_WIDTH - 20, SCALE_Y(207), TFT_RED);
+
+
+    drawCenteredText(SCALE_Y(215), "ACTIVATE SCORCHED EARTH?", HALEHOUND_HOTPINK, 1);
+    tft.setTextSize(1);
+    tft.setTextColor(HALEHOUND_MAGENTA);
+    tft.setCursor(SCALE_X(30), SCALE_Y(232));
+    tft.print("- Wipe SD card");
+    tft.setCursor(SCALE_X(30), SCALE_Y(244));
+    tft.print("- Lock all offensive tools");
+    tft.setCursor(SCALE_X(30), SCALE_Y(256));
+    tft.print("- Enter Blue Team mode");
+
+
+    tft.drawLine(20, SCALE_Y(268), SCREEN_WIDTH - 20, SCALE_Y(268), HALEHOUND_VIOLET);
+
+
+    int confirmX = SCALE_X(10);
+    int confirmW = SCALE_W(130);
+    int confirmH = SCALE_H(32);
+    int confirmY = SCALE_Y(275);
+    tft.fillRoundRect(confirmX, confirmY, confirmW, confirmH, 5, HALEHOUND_DARK);
+    tft.drawRoundRect(confirmX, confirmY, confirmW, confirmH, 5, TFT_RED);
+    tft.setTextSize(1);
+    tft.setTextColor(TFT_RED);
+    tft.setCursor(confirmX + 8, confirmY + (confirmH - 8) / 2);
+    tft.print("HOLD 3s CONFIRM");
+
+
+    int cancelX = SCALE_X(150);
+    int cancelW = SCALE_W(80);
+    int cancelH = SCALE_H(32);
+    int cancelY = SCALE_Y(275);
+    tft.fillRoundRect(cancelX, cancelY, cancelW, cancelH, 5, HALEHOUND_DARK);
+    tft.drawRoundRect(cancelX, cancelY, cancelW, cancelH, 5, HALEHOUND_GUNMETAL);
+    tft.setTextColor(HALEHOUND_GUNMETAL);
+    tft.setCursor(cancelX + 15, cancelY + (cancelH - 8) / 2);
+    tft.print("CANCEL");
+
+
+
+    unsigned long holdStart = 0;
+    bool holding = false;
+    const unsigned long holdDuration = 3000;
+
+    while (true) {
+
+        if (IS_BOOT_PRESSED()) {
+            delay(200);
+            return;
+        }
+
+        if (!holding) {
+
+            uint16_t tx, ty;
+            bool touched = getTouchPoint(&tx, &ty);
+
+
+            if (touched && tx >= cancelX && tx <= cancelX + cancelW &&
+                ty >= cancelY && ty <= cancelY + cancelH) {
+                consumeTouch();
+                delay(200);
+                return;
+            }
+
+
+            if (touched && tx >= confirmX && tx <= confirmX + confirmW &&
+                ty >= confirmY && ty <= confirmY + confirmH) {
+                holdStart = millis();
+                holding = true;
+            }
+        } else {
+
+            if (!isStillTouched()) {
+
+                holding = false;
+                tft.fillRoundRect(confirmX, confirmY, confirmW, confirmH, 5, HALEHOUND_DARK);
+                tft.drawRoundRect(confirmX, confirmY, confirmW, confirmH, 5, TFT_RED);
+                tft.setTextSize(1);
+                tft.setTextColor(TFT_RED);
+                tft.setCursor(confirmX + 8, confirmY + (confirmH - 8) / 2);
+                tft.print("HOLD 3s CONFIRM");
+            } else {
+
+                unsigned long elapsed = millis() - holdStart;
+                int progress = map(min(elapsed, holdDuration), 0, holdDuration, 0, confirmW - 4);
+                tft.fillRect(confirmX + 2, confirmY + 2, progress, confirmH - 4, TFT_RED);
+
+
+                tft.setTextSize(1);
+                tft.setTextColor(TFT_WHITE);
+                tft.setCursor(confirmX + 8, confirmY + (confirmH - 8) / 2);
+                tft.print("HOLD 3s CONFIRM");
+
+                if (elapsed >= holdDuration) {
+
+                    tft.fillRoundRect(confirmX, confirmY, confirmW, confirmH, 5, TFT_WHITE);
+                    delay(200);
+                    break;
+                }
+            }
+        }
+
+        delay(30);
+    }
+
+
+    tft.fillScreen(TFT_BLACK);
+    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x4000);
+    tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, TFT_RED);
+
+    drawGlitchTitle(SCALE_Y(60), "VALHALLA");
+
+
+    int barX = 20;
+    int barY = SCALE_Y(140);
+    int barW = SCREEN_WIDTH - 40;
+    int barH = SCALE_H(20);
+
+    auto updateProgress = [&](int percent, const char* status) {
+
+        tft.fillRect(barX, barY - SCALE_H(20), barW, SCALE_H(18), TFT_BLACK);
+        tft.setTextSize(1);
+        tft.setTextColor(HALEHOUND_HOTPINK);
+        tft.setCursor(barX, barY - SCALE_H(18));
+        tft.print(status);
+
+
+        tft.drawRect(barX, barY, barW, barH, TFT_RED);
+        int fillW = map(percent, 0, 100, 0, barW - 2);
+        tft.fillRect(barX + 1, barY + 1, fillW, barH - 2, TFT_RED);
+    };
+
+
+    updateProgress(10, "WIPING SD CARD...");
+    if (SD.begin(SD_CS)) {
+        File root = SD.open("/");
+        if (root) {
+            recursiveDeleteSD(root);
+            root.close();
+        }
+        SD.end();
+    }
+    updateProgress(40, "SD CARD WIPED");
+    delay(500);
+
+
+    updateProgress(60, "LOCKING TOOLS...");
+    disclaimer_accepted = false;
+    delay(300);
+
+
+    updateProgress(80, "ENTERING BLUE TEAM...");
+    blue_team_mode = true;
+    delay(300);
+
+
+    updateProgress(90, "SAVING STATE...");
+    saveSettings();
+    delay(300);
+
+    updateProgress(100, "VALHALLA COMPLETE");
+    delay(1000);
+
+
+    drawCenteredText(SCALE_Y(200), "REBOOTING...", TFT_RED, 1);
+    delay(500);
+    ESP.restart();
+}
+
+
+
+
+
+void handleButtons() {
+
+    if (screen_timeout_seconds > 0 && !screen_asleep && !feature_active) {
+        if (millis() - last_interaction_time > (unsigned long)screen_timeout_seconds * 1000) {
+            ledcWrite(0, 0);
+            screen_asleep = true;
+            if (pin_enabled) device_locked = true;
+        }
+    }
+
+
+    if (screen_asleep) {
+        touchButtonsUpdate();
+        if (isTouched() || isBootButtonPressed()) {
+            screen_asleep = false;
+            ledcWrite(0, brightness_level);
+            last_interaction_time = millis();
+            if (device_locked) {
+                showPinLockScreen();
+
+                if (in_sub_menu) {
+                    submenu_initialized = false;
+                    displaySubmenu();
+                } else {
+                    menu_initialized = false;
+                    displayMenu();
+                }
+            }
+            delay(300);
+        }
+        return;
+    }
+
+    if (in_sub_menu) {
+        switch (current_menu_index) {
+            case 0: handleWiFiSubmenuTouch(); break;
+            case 1: handleBluetoothSubmenuTouch(); break;
+            case 2: handleNRFSubmenuTouch(); break;
+            case 3: handleBadUSBPage(); break;
+            case 4: handleSIGINTSubmenuTouch(); break;
+            case 5: handleToolsSubmenuTouch(); break;
+            case 6: handleSettingsSubmenuTouch(); break;
+            case 7: handleAboutPage(); break;
+            default: break;
+        }
+    } else {
+
+        touchButtonsUpdate();
+
+
+        {
+            int barY = SCREEN_HEIGHT - 22;
+            if (isTouchInArea(2, barY, SCREEN_WIDTH - 4, 20)) {
+                consumeTouch();
+
+                tft.drawRect(2, barY, SCREEN_WIDTH - 4, 20, HALEHOUND_HOTPINK);
+                tft.drawRect(4, barY + 2, SCREEN_WIDTH - 8, 16, HALEHOUND_HOTPINK);
+                delay(150);
+                activateValhalla();
+
+                menu_initialized = false;
+                displayMenu();
+                delay(200);
+                return;
+            }
+        }
+
+
+        if (pin_enabled && isTouchInArea(SCREEN_WIDTH - 28, 0, 28, 22)) {
+            device_locked = true;
+            ledcWrite(0, 0);
+            screen_asleep = true;
+            last_interaction_time = millis();
+            delay(200);
+            return;
+        }
+
+
+        for (int i = 0; i < NUM_MENU_ITEMS; i++) {
+            int column = (i < 4) ? 0 : 1;
+            int row = (i < 4) ? i : (i - 4);
+            int x_position = (column == 0) ? X_OFFSET_LEFT : X_OFFSET_RIGHT;
+            int y_position = Y_START + row * Y_SPACING;
+
+            if (isTouchInArea(x_position, y_position, 100, 60)) {
+                current_menu_index = i;
+                last_interaction_time = millis();
+                displayMenu();
+                delay(150);
+
+
+                updateActiveSubmenu();
+                if (active_submenu_items && active_submenu_size > 0) {
+                    current_submenu_index = 0;
+                    in_sub_menu = true;
+                    submenu_initialized = false;
+                    displaySubmenu();
+                }
+                break;
+            }
+        }
+    }
+}
+
+
+
+
+
+void showSplash() {
+    tft.fillScreen(HALEHOUND_BLACK);
+
+
+    tft.drawRect(2, 2, SCREEN_WIDTH - 4, SCREEN_HEIGHT - 4, HALEHOUND_VIOLET);
+    tft.drawRect(4, 4, SCREEN_WIDTH - 8, SCREEN_HEIGHT - 8, HALEHOUND_MAGENTA);
+
+
+    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x2945);
+
+#ifdef CYD_35
+
+    drawGlitchTitle(120, "EVAWARE");
+
+
+    drawGlitchStatus(170, FW_EDITION, HALEHOUND_MAGENTA);
+
+
+    tft.setTextSize(1);
+    drawCenteredText(200, FW_VERSION, HALEHOUND_HOTPINK, 1);
+
+
+    drawCenteredText(215, CYD_BOARD_NAME, HALEHOUND_HOTPINK, 1);
+#else
+
+    drawGlitchTitle(80, "EVAWARE");
+
+
+    drawGlitchStatus(110, FW_EDITION, HALEHOUND_MAGENTA);
+
+
+    tft.setTextSize(1);
+    drawCenteredText(130, FW_VERSION, HALEHOUND_HOTPINK, 1);
+
+
+    drawCenteredText(140, CYD_BOARD_NAME, HALEHOUND_HOTPINK, 1);
+#endif
+
+
+    drawCenteredText(SCREEN_HEIGHT - 40, "by marawda", HALEHOUND_VIOLET, 1);
+    drawCenteredText(SCREEN_HEIGHT - 25, "https://github.com/MARAWDA", HALEHOUND_VIOLET, 1);
+}
+
+
+
+
+
+void runBootDiagnostics() {
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextSize(1);
+    int y = 5;
+
+
+    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+    tft.setCursor(30, y);
+    tft.print("=== BOOT DIAGNOSTICS ===");
+    y += 18;
+
+
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setCursor(5, y);
+    tft.printf("SPI Bus: SCK=%d MISO=%d MOSI=%d", VSPI_SCK, VSPI_MISO, VSPI_MOSI);
+    y += 16;
+
+
+    tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    tft.setCursor(5, y);
+    tft.printf("NRF24: CE=%d CSN=%d", NRF24_CE, NRF24_CSN);
+    y += 12;
+
+
+    pinMode(SD_CS, OUTPUT); digitalWrite(SD_CS, HIGH);
+    pinMode(CC1101_CS, OUTPUT); digitalWrite(CC1101_CS, HIGH);
+    pinMode(NRF24_CSN, OUTPUT); digitalWrite(NRF24_CSN, HIGH);
+    pinMode(NRF24_CE, OUTPUT); digitalWrite(NRF24_CE, LOW);
+
+
+    SPI.end();
+    delay(10);
+    SPI.begin(VSPI_SCK, VSPI_MISO, VSPI_MOSI);
+    SPI.setFrequency(4000000);
+    delay(10);
+
+
+    bool nrfFound = false;
+    byte nrfStatus[3] = {0, 0, 0};
+    int nrfDelays[] = {10, 100, 500};
+
+    for (int attempt = 0; attempt < 3; attempt++) {
+        delay(nrfDelays[attempt]);
+
+
+        digitalWrite(NRF24_CSN, LOW);
+        delayMicroseconds(5);
+        nrfStatus[attempt] = SPI.transfer(0x07);
+        SPI.transfer(0xFF);
+        digitalWrite(NRF24_CSN, HIGH);
+
+        if (nrfStatus[attempt] != 0x00 && nrfStatus[attempt] != 0xFF) {
+            nrfFound = true;
+        }
+    }
+
+
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setCursor(5, y);
+    tft.printf("  RAW: 0x%02X  0x%02X  0x%02X", nrfStatus[0], nrfStatus[1], nrfStatus[2]);
+    y += 12;
+
+    tft.setCursor(5, y);
+    if (nrfFound) {
+        tft.setTextColor(TFT_GREEN, TFT_BLACK);
+        tft.print("  >> NRF24 DETECTED");
+        for (int i = 0; i < 3; i++) {
+            if (nrfStatus[i] != 0x00 && nrfStatus[i] != 0xFF) {
+                tft.printf(" (try %d +%dms)", i + 1, nrfDelays[i]);
+                break;
+            }
+        }
+    } else {
+        tft.setTextColor(TFT_RED, TFT_BLACK);
+        tft.print("  >> NRF24 NOT FOUND");
+    }
+    y += 18;
+
+
+    tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    tft.setCursor(5, y);
+    tft.printf("CC1101: CS=%d GDO0=%d GDO2=%d", CC1101_CS, CC1101_GDO0, CC1101_GDO2);
+    y += 12;
+
+
+    SPI.end();
+    delay(10);
+
+
+    pinMode(NRF24_CSN, OUTPUT);
+    digitalWrite(NRF24_CSN, HIGH);
+    pinMode(SD_CS, OUTPUT);
+    digitalWrite(SD_CS, HIGH);
+
+
+
+    bool cc1101Found = false;
+    if (cc1101SafeCheck()) {
+        ELECHOUSE_cc1101.setSpiPin(VSPI_SCK, VSPI_MISO, VSPI_MOSI, CC1101_CS);
+        ELECHOUSE_cc1101.setGDO(CC1101_GDO0, CC1101_GDO2);
+        cc1101Found = ELECHOUSE_cc1101.getCC1101();
+    }
+
+    tft.setCursor(5, y);
+    if (cc1101Found) {
+        tft.setTextColor(TFT_GREEN, TFT_BLACK);
+        tft.print("  >> CC1101 DETECTED");
+    } else {
+        tft.setTextColor(TFT_RED, TFT_BLACK);
+        tft.print("  >> CC1101 NOT FOUND");
+    }
+    y += 18;
+
+
+    tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    tft.setCursor(5, y);
+    tft.printf("SD Card: CS=%d", SD_CS);
+    y += 12;
+
+    SPI.end();
+    delay(5);
+    SPI.begin(VSPI_SCK, VSPI_MISO, VSPI_MOSI);
+    pinMode(NRF24_CSN, OUTPUT); digitalWrite(NRF24_CSN, HIGH);
+    pinMode(CC1101_CS, OUTPUT); digitalWrite(CC1101_CS, HIGH);
+
+
+    digitalWrite(SD_CS, LOW);
+    delayMicroseconds(5);
+    for (int i = 0; i < 10; i++) SPI.transfer(0xFF);
+    SPI.transfer(0x40);
+    SPI.transfer(0x00);
+    SPI.transfer(0x00);
+    SPI.transfer(0x00);
+    SPI.transfer(0x00);
+    SPI.transfer(0x95);
+    byte sdResp = SPI.transfer(0xFF);
+    byte sdResp2 = SPI.transfer(0xFF);
+    digitalWrite(SD_CS, HIGH);
+
+    tft.setCursor(5, y);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.printf("  RESP: 0x%02X 0x%02X", sdResp, sdResp2);
+    if (sdResp == 0x01) {
+        tft.setTextColor(TFT_GREEN, TFT_BLACK);
+        tft.print(" (card OK)");
+    }
+    y += 18;
+
+
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setCursor(5, y);
+    tft.printf("Heap:%d  CPU:%dMHz  Flash:%dMB",
+        ESP.getFreeHeap(), ESP.getCpuFreqMHz(),
+        ESP.getFlashChipSize() / 1024 / 1024);
+    y += 12;
+
+    uint64_t mac = ESP.getEfuseMac();
+    tft.setCursor(5, y);
+    tft.printf("MAC: %02X:%02X:%02X:%02X:%02X:%02X",
+        (uint8_t)(mac), (uint8_t)(mac >> 8), (uint8_t)(mac >> 16),
+        (uint8_t)(mac >> 24), (uint8_t)(mac >> 32), (uint8_t)(mac >> 40));
+    y += 18;
+
+
+    bool hasError = !nrfFound || !cc1101Found;
+    int waitTime = hasError ? 8 : 3;
+
+    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+    for (int i = waitTime; i > 0; i--) {
+        tft.fillRect(5, y, 230, 12, TFT_BLACK);
+        tft.setCursor(5, y);
+        if (hasError) {
+            tft.printf("CHECK WIRING! Continuing in %d...", i);
+        } else {
+            tft.printf("All radios OK! Continuing in %d...", i);
+        }
+        delay(1000);
+    }
+
+
+    SPI.end();
+    delay(5);
+    SPI.begin(VSPI_SCK, VSPI_MISO, VSPI_MOSI);
+    pinMode(SD_CS, OUTPUT); digitalWrite(SD_CS, HIGH);
+    pinMode(CC1101_CS, OUTPUT); digitalWrite(CC1101_CS, HIGH);
+    pinMode(NRF24_CSN, OUTPUT); digitalWrite(NRF24_CSN, HIGH);
+}
+
+
+
+
+
+void setup() {
+
+    Serial.begin(CYD_DEBUG_BAUD);
+    delay(500);
+
+    Serial.println();
+    Serial.println("===============================================");
+    Serial.println("        " FW_DEVICE " " FW_VERSION);
+    Serial.println("        " CYD_BOARD_NAME);
+    Serial.println("===============================================");
+    Serial.println();
+
+
+    tft.init();
+    tft.setRotation(0);
+#ifdef CYD_35
+    tft.invertDisplay(false);
+#else
+    tft.invertDisplay(false);
+#endif
+    tft.fillScreen(HALEHOUND_BLACK);
+
+
+    ledcSetup(0, 5000, 8);
+    ledcAttachPin(CYD_TFT_BL, 0);
+    ledcWrite(0, brightness_level);
+
+
+    showSplash();
+
+
+    Serial.println("[INIT] Initializing subsystems...");
+
+
+    spiManagerSetup();
+    Serial.println("[INIT] SPI Manager OK");
+
+
+
+    initButtons();
+    Serial.println("[INIT] Touch buttons OK");
+
+
+
+
+
+    {
+
+        SPI.end();
+        delay(10);
+        pinMode(NRF24_CE, OUTPUT);
+        digitalWrite(NRF24_CE, LOW);
+        digitalWrite(NRF24_CSN, HIGH);
+        digitalWrite(CC1101_CS, HIGH);
+        digitalWrite(SD_CS, HIGH);
+        digitalWrite(PN532_CS, HIGH);
+
+        SPI.begin(VSPI_SCK, VSPI_MISO, VSPI_MOSI);
+        delay(150);
+
+
+
+        SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+        digitalWrite(NRF24_CSN, LOW);
+        delayMicroseconds(5);
+        SPI.transfer(0x20 | 0x03);
+        SPI.transfer(0x03);
+        digitalWrite(NRF24_CSN, HIGH);
+        delayMicroseconds(5);
+
+
+        digitalWrite(NRF24_CSN, LOW);
+        delayMicroseconds(5);
+        uint8_t nrfStatus = SPI.transfer(0x03);
+        uint8_t nrfSetupAw = SPI.transfer(0xFF);
+        digitalWrite(NRF24_CSN, HIGH);
+        SPI.endTransaction();
+
+        bool nrfFound = (nrfSetupAw >= 0x01 && nrfSetupAw <= 0x03);
+        Serial.printf("[INIT] NRF24 check: STATUS=0x%02X SETUP_AW=0x%02X → %s\n",
+                      nrfStatus, nrfSetupAw, nrfFound ? "OK" : "NOT FOUND");
+
+
+        SPI.end();
+        SPI.begin(VSPI_SCK, VSPI_MISO, VSPI_MOSI);
+        digitalWrite(NRF24_CSN, HIGH);
+        digitalWrite(CC1101_CS, HIGH);
+        digitalWrite(SD_CS, HIGH);
+        digitalWrite(PN532_CS, HIGH);
+
+        if (!nrfFound) {
+
+            Serial.println("[INIT] WARNING: NRF24 not found on compiled pins!");
+            Serial.printf("[INIT] Compiled for: %s (CE=%d, CSN=%d)\n", FW_DEVICE, NRF24_CE, NRF24_CSN);
+
+            tft.fillScreen(TFT_BLACK);
+            tft.drawRect(5, 5, SCREEN_WIDTH - 10, SCREEN_HEIGHT - 10, TFT_RED);
+            tft.drawRect(7, 7, SCREEN_WIDTH - 14, SCREEN_HEIGHT - 14, TFT_RED);
+
+            drawGlitchTitle(60, "WARNING");
+
+            tft.setTextSize(1);
+            drawCenteredText(85, "NRF24 NOT DETECTED", TFT_RED, 1);
+            drawCenteredText(100, "Wrong firmware for this board?", HALEHOUND_MAGENTA, 1);
+
+            tft.setTextColor(HALEHOUND_MAGENTA, TFT_BLACK);
+            tft.setCursor(15, 120);
+            tft.printf("Flashed: %s", FW_EDITION);
+            tft.setCursor(15, 135);
+            tft.printf("NRF24 pins: CE=%d CSN=%d", NRF24_CE, NRF24_CSN);
+
+            drawCenteredText(160, "Flash the correct binary:", HALEHOUND_HOTPINK, 1);
+
+            #ifdef NMRF_HAT
+            drawCenteredText(180, "HaleHound-CYD.bin", HALEHOUND_BRIGHT, 1);
+            drawCenteredText(195, "(standard CYD without hat)", HALEHOUND_MAGENTA, 1);
+            #elif defined(CYD_E32R28T)
+            drawCenteredText(180, "HaleHound-CYD.bin", HALEHOUND_BRIGHT, 1);
+            drawCenteredText(195, "(if you have a standard CYD)", HALEHOUND_MAGENTA, 1);
+            #else
+            drawCenteredText(180, "HaleHound-E32R28T.bin", HALEHOUND_BRIGHT, 1);
+            drawCenteredText(195, "(if you have a QDtech E32R28T)", HALEHOUND_MAGENTA, 1);
+            drawCenteredText(215, "HaleHound-CYD-HAT.bin", HALEHOUND_BRIGHT, 1);
+            drawCenteredText(230, "(if you have the NM-RF-Hat)", HALEHOUND_MAGENTA, 1);
+            #endif
+
+            drawCenteredText(255, "Or: no NRF24 wired yet", HALEHOUND_GUNMETAL, 1);
+            drawCenteredText(275, "Touch screen to continue", HALEHOUND_GUNMETAL, 1);
+
+
+            while (true) {
+                uint16_t wx, wy;
+                if (getTouchPoint(&wx, &wy)) break;
+                if (Serial.available()) break;
+                delay(50);
+            }
+
+            delay(300);
+
+
+            showSplash();
+        }
+    }
+
+
+
+
+
+
+
+    loadSettings();
+
+    ledcWrite(0, brightness_level);
+    applyColorMode(color_mode);
+
+
+    if (screen_rotation != 0) {
+        tft.setRotation(screen_rotation);
+        Serial.printf("[INIT] Rotation set to %d\n", screen_rotation);
+    }
+    applyColorOrder();
+    if (display_inverted) {
+        tft.invertDisplay(true);
+    }
+    Serial.println("[INIT] Settings loaded");
+
+
+
+    #if CYD_HAS_AMP
+    pinMode(CC1101_TX_EN, OUTPUT);
+    digitalWrite(CC1101_TX_EN, LOW);
+    Serial.println("[INIT] E32R28T SC8002B amp shut down (GPIO 4 LOW)");
+    #endif
+
+
+    #if defined(CC1101_TX_EN) && defined(CC1101_RX_EN)
+    if (cc1101_pa_module) {
+        pinMode(CC1101_TX_EN, OUTPUT);
+        pinMode(CC1101_RX_EN, OUTPUT);
+        digitalWrite(CC1101_TX_EN, LOW);
+        digitalWrite(CC1101_RX_EN, HIGH);
+        Serial.println("[INIT] CC1101 PA module — TX_EN/RX_EN pins initialized (RX mode)");
+    }
+    #endif
+
+
+    {
+        extern bool touch_calibrated;
+        if (!touch_calibrated) {
+            Serial.println("[INIT] No touch calibration found — running first-time calibration");
+            runTouchCalibration();
+        }
+    }
+
+
+    Serial.printf("[INFO] Free Heap: %d\n", ESP.getFreeHeap());
+    Serial.printf("[INFO] CPU Freq: %d MHz\n", ESP.getCpuFreqMHz());
+    Serial.printf("[INFO] Flash Size: %d MB\n", ESP.getFlashChipSize() / 1024 / 1024);
+
+
+    delay(2000);
+
+
+    is_main_menu = true;
+    menu_initialized = false;
+    displayMenu();
+    last_interaction_time = millis();
+
+    Serial.println("[INIT] Setup complete - entering main loop");
+}
+
+
+
+
+
+void loop() {
+    handleButtons();
+    delay(20);
+}

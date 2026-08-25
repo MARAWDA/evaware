@@ -108,6 +108,12 @@ void gpsStartBackground();
 // Stop GPS background mode — closes UART2, restores Serial
 void gpsStopBackground();
 
+// Suspend GPS while the NRF24 radio is taking the shared 3.3V rail
+void gpsStopForRadio();
+
+// Restore GPS after the NRF24 action exits
+void gpsResumeAfterRadio();
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DIAGNOSTICS — TinyGPSPlus counters for debugging data flow
 // ═══════════════════════════════════════════════════════════════════════════

@@ -473,9 +473,8 @@ static void drawUI() {
     // SKULL WATERMARK - Draw behind waterfall area
     // Skull is 211x280, center it horizontally, position below separator
     // ═══════════════════════════════════════════════════════════════════════
-    // Skull splatter watermark - full screen
-    tft.drawBitmap(0, 0, skull_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0041);  // Dark cyan watermark
-    tft.drawBitmap(0, 0, rei_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);   // Rei watermark, dim navy so it stays behind the FFT/text
+    // Rei watermark - full screen (skull removed, was covering it up)
+    tft.drawBitmap(0, 0, rei_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
 }
 
 // Glitch title splash - shown on entry, FFT overwrites it during operation

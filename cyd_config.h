@@ -404,7 +404,11 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-#define GPS_RX_PIN       3    // P1 RX pin - ESP32 receives from GPS TX
+#if defined(CYD_35) || defined(CYD_E32R28T)
+  #define GPS_RX_PIN     26   // GPS RX is on the speaker/DAC pin on CYD boards
+#else
+  #define GPS_RX_PIN      3   // P1 RX pin - ESP32 receives from GPS TX
+#endif
 #define GPS_TX_PIN      -1    // Not used - GPS is receive-only
 #define GPS_BAUD      9600    // GT-U7 default baud rate
 

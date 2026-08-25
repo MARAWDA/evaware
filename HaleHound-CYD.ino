@@ -42,6 +42,7 @@
 #include "spi_manager.h"
 #include "icon.h"
 #include "skull_bg.h"
+#include "rei_bg.h"
 #include "evaware_bg.h"
 #include "josefin_sans_font.h"
 
@@ -439,6 +440,9 @@ void displaySubmenu() {
 
     if (!submenu_initialized) {
         tft.fillScreen(TFT_BLACK);
+        if (current_menu_index == 0) { // WiFi submenu only
+            tft.drawBitmap(0, 0, rei_bg_bitmap, SKULL_BG_WIDTH, SKULL_BG_HEIGHT, 0x0861);
+        }
         drawInoIconBar();  // Always-visible back button - reachable even if the list overflows
 
         for (int i = 0; i < active_submenu_size; i++) {
@@ -1157,6 +1161,11 @@ void handleNRFSubmenuTouch() {
             feature_exit_requested = false;
             waitForTouchRelease();
 
+            gpsStopForRadio();
+            if (!nrf24IsActive()) {
+                nrf24Setup();
+            }
+
             switch (current_submenu_index) {
                 case 0: // Scanner
                     Scanner::scannerSetup();
@@ -1259,6 +1268,7 @@ void handleNRFSubmenuTouch() {
                     break;
             }
 
+            gpsResumeAfterRadio();
             returnToSubmenu();
             break;
         }

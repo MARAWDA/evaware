@@ -52,6 +52,15 @@ static uint32_t gpsPassedCount = 0;    // valid checksum sentences
 static uint32_t gpsSatUpdates = 0;     // how many times gps.satellites.isUpdated() fired
 static int gpsActiveBaud = 9600;        // Which baud rate worked
 
+static void resetGPSParser() {
+    gps = TinyGPSPlus();
+    gpsRawIdx = 0;
+    gpsDollarCount = 0;
+    gpsPassedCount = 0;
+    gpsSatUpdates = 0;
+    memset(gpsRawBuf, 0, sizeof(gpsRawBuf));
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ICON BAR
 // ═══════════════════════════════════════════════════════════════════════════
@@ -616,11 +625,9 @@ static uint32_t tryGPSPin(int pin, int baud, int timeoutMs) {
 void gpsSetup() {
     if (gpsInitialized) return;
 
-    // Temporarily force NRF24 to LOW power to free 3.3V rail for GPS lock
-    // (both share the same LDO; max RF TX starves GPS satellite detection)
-    bool savedNrf24Power = nrf24_power_high;
     if (nrf24IsActive()) {
-        nrf24SetPower(RF24_PA_LOW);
+        nrf24Shutdown();  // Full radio power-down so the GPS gets the rail during lock
+        delay(500);      // More headroom for the GPS + power rail to settle cleanly
     }
 
     memset(&currentData, 0, sizeof(currentData));
@@ -634,16 +641,38 @@ void gpsSetup() {
 
     drawCenteredText(SCALE_Y(80), "SCANNING GPS...", HALEHOUND_HOTPINK, 2);
 
-    // Pin/baud combos to try — GPIO3 (P1 connector) first
+    // Pin/baud combos to try. On E32R35T, GPIO26 is NRF24_CSN and must not be
+    // treated as a GPS RX pin; the actual GPS wiring is on the P1 RX header.
     struct ScanEntry { int pin; int baud; const char* label; };
+
+#if defined(CYD_35) || defined(CYD_E32R28T)
+    ScanEntry scans[] = {
+        { 26, 9600,  "GPIO26 (GPS RX) @ 9600"   },
+        { 26, 38400, "GPIO26 (GPS RX) @ 38400"  },
+        { 3,  9600,  "P1 RX (GPIO3) @ 9600"     },
+        { 3,  38400, "P1 RX (GPIO3) @ 38400"    },
+        { 1,  9600,  "P1 TX (GPIO1) @ 9600"     },
+    };
+    int numScans = 5;
+#elif defined(CYD_28)
+    ScanEntry scans[] = {
+        { 26, 9600,  "GPIO26 (GPS RX) @ 9600"   },
+        { 26, 38400, "GPIO26 (GPS RX) @ 38400"  },
+        { 3,  9600,  "P1 RX (GPIO3) @ 9600"     },
+        { 3,  38400, "P1 RX (GPIO3) @ 38400"    },
+        { 1,  9600,  "P1 TX (GPIO1) @ 9600"     },
+    };
+    int numScans = 5;
+#else
     ScanEntry scans[] = {
         { 3,  9600,  "P1 RX (GPIO3) @ 9600"   },
         { 3,  38400, "P1 RX (GPIO3) @ 38400"  },
-        { 26, 9600,  "GPIO26 (spk) @ 9600"    },
-        { 26, 38400, "GPIO26 (spk) @ 38400"   },
+        { 26, 9600,  "GPIO26 @ 9600"          },
+        { 26, 38400, "GPIO26 @ 38400"         },
         { 1,  9600,  "P1 TX (GPIO1) @ 9600"   },
     };
     int numScans = 5;
+#endif
 
     gpsActivePin = -1;
     gpsActiveBaud = 9600;
@@ -661,7 +690,8 @@ void gpsSetup() {
         tft.fillRect(SCALE_X(10), SCALE_Y(135), SCREEN_WIDTH - SCALE_X(20), SCALE_H(8), HALEHOUND_DARK);
         tft.fillRect(SCALE_X(10), SCALE_Y(135), barW, SCALE_H(8), HALEHOUND_HOTPINK);
 
-        uint32_t chars = tryGPSPin(scans[i].pin, scans[i].baud, 2500);
+        resetGPSParser();
+        uint32_t chars = tryGPSPin(scans[i].pin, scans[i].baud, 5000);
 
         // Show result for this attempt
         tft.setCursor(SCALE_X(10), SCALE_Y(150));
@@ -698,11 +728,6 @@ void gpsSetup() {
 
     delay(1500);
     gpsInitialized = true;
-
-    // Restore NRF24 power level to pre-scan setting
-    if (nrf24IsActive() && savedNrf24Power) {
-        nrf24SetPower(RF24_PA_HIGH);
-    }
 }
 
 void gpsUpdate() {
@@ -859,6 +884,11 @@ void gpsScreen() {
     delay(50);
     pinMode(1, OUTPUT);
     digitalWrite(1, HIGH);
+
+    // Restore radio so the board can go back to normal operation immediately.
+    if (!nrf24IsActive() && !nrf24Setup()) {
+        Serial.println("[GPS] NRF24 restore failed after GPS exit");
+    }
 }
 
 bool gpsHasFix() {
@@ -962,7 +992,28 @@ void gpsStopBackground() {
     digitalWrite(1, HIGH);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+void gpsStopForRadio() {
+    gpsSerial.end();
+    delay(50);
+    pinMode(1, OUTPUT);
+    digitalWrite(1, HIGH);
+    while (gpsSerial.available()) gpsSerial.read();
+}
+
+void gpsResumeAfterRadio() {
+    if (gpsActivePin < 0) {
+        gpsActivePin = GPS_RX_PIN;
+        gpsActiveBaud = GPS_BAUD;
+    }
+
+    gpsSerial.end();
+    delay(100);
+    gpsSerial.begin(gpsActiveBaud, SERIAL_8N1, gpsActivePin, -1);
+    delay(100);
+    while (gpsSerial.available()) gpsSerial.read();
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // DIAGNOSTICS — expose TinyGPSPlus counters for wardriving debug
 // ═══════════════════════════════════════════════════════════════════════════
 

@@ -1,5 +1,5 @@
 # EVAWARE - ESP32 Offensive Security Toolkit
-specifically build for [this cyd]([url](https://www.amazon.ca/gp/product/B0D93MBWC2/ref=ox_sc_saved_image_4?smid=A1PKC2PUMNR8VD&psc=1))
+specifically build for [[this cyd([url](https://www.amazon.ca/gp/product/B0D93MBWC2/ref=ox_sc_saved_image_4?smid=A1PKC2PUMNR8VD&psc=1)]
 made to be simple as possible and plug and play for nrf24 3.3v is connected to ce and vcc to avoid sawdaring 
 
 
